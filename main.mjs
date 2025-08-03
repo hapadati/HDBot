@@ -67,6 +67,22 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
+// 🔽 通常のメッセージで手動の ping / mention にも反応させる
+client.on('messageCreate', async (message) => {
+    // Bot自身や他のBotのメッセージは無視
+    if (message.author.bot) return;
+
+    const content = message.content.trim().toLowerCase();
+
+    if (content === 'ping') {
+        await message.reply('🏓 Pong!');
+    }
+
+    if (content === 'mention') {
+        await message.reply(`👋 ${message.author} が呼びました！`);
+    }
+});
+
 // エラーハンドリング
 client.on('error', (error) => {
     console.error('❌ Discord クライアントエラー:', error);
