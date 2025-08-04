@@ -1,4 +1,4 @@
-// commands/utils/roll.js
+// commands/utils/dirdice.js
 import { EmbedBuilder } from 'discord.js';
 
 // サイコロを振る関数
@@ -27,9 +27,20 @@ export function rollDice(dice) {
     return rolls;
 }
 
-// roll コマンドの実行処理
-export async function handleRollCommand(interaction) {
-    const dice = interaction.options.getString('dice');
+// 結果を埋め込む処理
+export function createEmbedResult(rolls, resultMessage, embedColor, userName) {
+    const embed = new EmbedBuilder()
+        .setTitle(`${userName} のサイコロ結果`)
+        .setDescription(resultMessage)
+        .setColor(embedColor)
+        .setFooter({ text: 'サイコロ結果' })
+        .setTimestamp();
+    return embed;
+}
+
+// サイコロメッセージの処理
+export async function handleMessageRoll(message) {
+    const dice = message.content.trim();
     let rolls;
     let resultMessage = '';
     let embedColor = 0x000000; // 黒色デフォルト
@@ -86,16 +97,11 @@ export async function handleRollCommand(interaction) {
         }
 
         // 結果の埋め込みメッセージ
-        const embed = new EmbedBuilder()
-            .setTitle(`${interaction.user.username} のサイコロ結果`)
-            .setDescription(resultMessage)
-            .setColor(embedColor)
-            .setFooter({ text: 'サイコロ結果' })
-            .setTimestamp();
+        const embed = createEmbedResult(rolls, resultMessage, embedColor, message.author.username);
+        await message.reply({ embeds: [embed] });
 
-        await interaction.reply({ embeds: [embed] });
     } catch (error) {
         console.error('❌ サイコロエラー:', error);
-        await interaction.reply(`❌ エラーが発生しました: ${error.message}`);
+        await message.reply(`❌ エラーが発生しました: ${error.message}`);
     }
 }
