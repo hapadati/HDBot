@@ -45,6 +45,13 @@ export async function handleMessageRoll(message) {
     let resultMessage = '';
     let embedColor = 0x000000; // 黒色デフォルト
 
+    // サイコロの書式が正しいかチェック
+    const isValidDice = /^(\d+d\d+|dd\d+)$/.test(dice);
+    if (!isValidDice) {
+        await message.reply('❌ 無効なサイコロの書式です。例: 1d100 または dd50');
+        return;
+    }
+
     try {
         // サイコロを振る
         rolls = rollDice(dice);
@@ -58,14 +65,27 @@ export async function handleMessageRoll(message) {
             // 1~100のランダムな数字を生成
             const randomRoll = Math.floor(Math.random() * 100) + 1;
 
-            // サイコロの出目（1~100）がターゲット以下なら「成功」
+            // 目標値以下なら成功
             if (randomRoll <= target) {
-                resultMessage = `成功！出目: ${randomRoll}`;
-                embedColor = 0x0077ff; // 青色に設定（成功）
-            } else {
-                // サイコロの出目（1~100）がターゲットより大きければ「失敗」
-                resultMessage = `失敗！出目: ${randomRoll}`;
-                embedColor = 0xff0000; // 赤色に設定（失敗）
+                // 圧倒的成功の判定: randomRoll <= 5
+                if (randomRoll <= 5) {
+                    resultMessage = `圧倒的成功！出目: ${randomRoll}`;
+                    embedColor = 0x00ff00; // 緑色（圧倒的成功）
+                } else {
+                    resultMessage = `成功！出目: ${randomRoll}`;
+                    embedColor = 0x0077ff; // 青色（成功）
+                }
+            }
+            // 目標値を超えると失敗
+            else {
+                // 圧倒的失敗の判定: randomRoll >= 96
+                if (randomRoll >= 96) {
+                    resultMessage = `圧倒的失敗！出目: ${randomRoll}`;
+                    embedColor = 0xff0000; // 赤色（圧倒的失敗）
+                } else {
+                    resultMessage = `失敗！出目: ${randomRoll}`;
+                    embedColor = 0xff0000; // 赤色（失敗）
+                }
             }
         }
         // 通常のd形式の場合

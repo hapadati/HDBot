@@ -1,4 +1,3 @@
-// commands/utils/roll.js
 import { EmbedBuilder } from 'discord.js';
 
 // サイコロを振る関数
@@ -49,12 +48,25 @@ export async function handleRollCommand(interaction) {
 
             // サイコロの出目（1~100）がターゲット以下なら「成功」
             if (randomRoll <= target) {
-                resultMessage = `成功！出目: ${randomRoll}`;
-                embedColor = 0x0077ff; // 青色に設定（成功）
-            } else {
-                // サイコロの出目（1~100）がターゲットより大きければ「失敗」
-                resultMessage = `失敗！出目: ${randomRoll}`;
-                embedColor = 0xff0000; // 赤色に設定（失敗）
+                // 圧倒的成功の判定: randomRoll <= 5
+                if (randomRoll <= 5) {
+                    resultMessage = `圧倒的成功！出目: ${randomRoll}`;
+                    embedColor = 0x00ff00; // 緑色（圧倒的成功）
+                } else {
+                    resultMessage = `成功！出目: ${randomRoll}`;
+                    embedColor = 0x0077ff; // 青色（成功）
+                }
+            }
+            // サイコロの出目（1~100）がターゲットより大きければ「失敗」
+            else {
+                // 圧倒的失敗の判定: randomRoll >= 96
+                if (randomRoll >= 96) {
+                    resultMessage = `圧倒的失敗！出目: ${randomRoll}`;
+                    embedColor = 0xff0000; // 赤色（圧倒的失敗）
+                } else {
+                    resultMessage = `失敗！出目: ${randomRoll}`;
+                    embedColor = 0xff0000; // 赤色（失敗）
+                }
             }
         }
         // 通常のd形式の場合
