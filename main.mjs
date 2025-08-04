@@ -2,14 +2,13 @@ import { Client, GatewayIntentBits, Routes, EmbedBuilder } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
 import { REST } from '@discordjs/rest';
-import nodemailer from 'nodemailer';
 
 // コマンドのインポート
 import { pingCommand } from './commands/utils/ping.js';
 import { mentionCommand } from './commands/utils/mention.js'; 
 import { handleRollCommand } from './commands/utils/roll.js';
 import { handleMessageRoll } from './commands/utils/dirdice.js';
-import { sendEmail } from './debug/sendEmail.js';  // ここでインポートするだけで関数定義は不要
+// import { sendEmail } from './debug/sendEmail.js';  // メール送信機能を一時的に削除
 
 dotenv.config();
 
@@ -79,9 +78,9 @@ client.on('interactionCreate', async (interaction) => {
         const mentionCount = interaction.options.getInteger('count');
         const mentionUserTags = interaction.options.getString('mentionUsers').split(', ');
 
-        // メール送信
-        await sendEmail(userTag, userId, 'mention', mentionCount, mentionUserTags);
-        
+        // メール送信部分を削除
+        // await sendEmail(userTag, userId, 'mention', mentionCount, mentionUserTags);
+
         await mentionCommand.execute(interaction);
     } else if (commandName === 'roll') {
         await handleRollCommand(interaction);
