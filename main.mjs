@@ -1,18 +1,13 @@
-import { Client, GatewayIntentBits, Routes, EmbedBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, Routes, REST } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
-import { REST } from '@discordjs/rest';
 
 // コマンドのインポート
-import { pingCommand } from './commands/utils/ping.js';
-import { mentionCommand } from './commands/utils/mention.js'; 
-import { handleRollCommand } from './commands/utils/roll.js';
-import { handleMessageRoll } from './commands/utils/dirdice.js';
-// import { sendEmail } from './debug/sendEmail.js';  // メール送信機能を一時的に削除
+import { pingCommand } from './commands/utils/ping.js'; // ping コマンドをインポート
 
 dotenv.config();
 
-// Discord Botクライアントを作成
+// Discord Bot クライアントを作成
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -25,8 +20,7 @@ const client = new Client({
 
 // スラッシュコマンドの設定
 const commands = [
-    pingCommand,
-    mentionCommand,
+    pingCommand, // ping コマンドを追加
     {
         name: 'roll',
         description: 'サイコロを振る (例: 1d100 または dd50)',
@@ -71,25 +65,22 @@ client.on('interactionCreate', async (interaction) => {
     const { commandName } = interaction;
 
     if (commandName === 'ping') {
+        // ping コマンドの実行
         await pingCommand.execute(interaction);
-    } else if (commandName === 'mention') {
-        const userTag = interaction.user.tag;
-        const userId = interaction.user.id;
-        const mentionCount = interaction.options.getInteger('count');
-        const mentionUserTags = interaction.options.getString('mentionUsers').split(', ');
-
-        // メール送信部分を削除
-        // await sendEmail(userTag, userId, 'mention', mentionCount, mentionUserTags);
-
-        await mentionCommand.execute(interaction);
     } else if (commandName === 'roll') {
+        // roll コマンドの処理
         await handleRollCommand(interaction);
     }
 });
 
-// メッセージ処理（DMおよびサーバー内メッセージに対応）
+// メッセージ処理（通常メッセージで「ping」に反応）
 client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
+    if (message.author.bot) return; // ボット自身のメッセージを無視
+
+    // 通常メッセージで「ping」と送信された場合
+    if (message.content.toLowerCase() === 'ping') {
+        await message.reply('Pong!'); // 「Pong!」と返信
+    }
 
     // サイコロの形式にマッチするメッセージの場合
     const dicePattern = /(dd\d+|(\d+)d(\d+))/i;
