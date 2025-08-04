@@ -1,9 +1,10 @@
+// client.js
 import { Client, GatewayIntentBits, Routes, REST } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
-
-// コマンドのインポート
-import { pingCommand } from './commands/utils/ping.js'; // ping コマンドをインポート
+import fs from 'fs';
+import path from 'path';
+import { data as omikujiCommand, execute as omikujiExecute } from './commands/utils/omikuji.js'; // omikuji コマンドをインポート
 
 dotenv.config();
 
@@ -20,7 +21,11 @@ const client = new Client({
 
 // スラッシュコマンドの設定
 const commands = [
-    pingCommand, // ping コマンドを追加
+    {
+        name: 'ping',
+        description: 'Ping Pong!',
+    },
+    omikujiCommand,  // おみくじコマンドを追加
     {
         name: 'roll',
         description: 'サイコロを振る (例: 1d100 または dd50)',
@@ -66,23 +71,40 @@ client.on('interactionCreate', async (interaction) => {
 
     if (commandName === 'ping') {
         // ping コマンドの実行
-        await pingCommand.execute(interaction);
+        await interaction.reply('🏓 Pong!');
+    } else if (commandName === 'おみくじ') {
+        // おみくじコマンドの実行
+        await omikujiExecute(interaction);
     } else if (commandName === 'roll') {
         // roll コマンドの処理
         await handleRollCommand(interaction);
     }
 });
 
-// メッセージ処理（通常メッセージで「ping」に反応）
-client.on('messageCreate', async (message) => {
-    if (message.author.bot) return; // ボット自身のメッセージを無視
+// サイコロコマンドの処理
+async function handleRollCommand(interaction) {
+    const dice = interaction.options.getString('dice');
+    const [count, sides] = dice.split('d').map(Number);
 
-    // 通常メッセージで「ping」と送信された場合
-    if (message.content.toLowerCase() === 'ping') {
-        await message.reply('🏓 Pong!'); // 「🏓 Pong!」と返信
+    if (isNaN(count) || isNaN(sides) || count <= 0 || sides <= 0) {
+        await interaction.reply('サイコロの数と面の数を正しく入力してください。例: 3d6');
+        return;
     }
 
-    // サイコロの形式にマッチするメッセージの場合
+    const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
+    const total = rolls.reduce((acc, curr) => acc + curr, 0);
+
+    await interaction.reply(`サイコロの結果: ${rolls.join(', ')} (合計: ${total})`);
+}
+
+// メッセージ処理（通常メッセージで「ping」に反応）
+client.on('messageCreate', async (message) => {
+    if (message.author.bot) return;
+
+    if (message.content.toLowerCase() === 'ping') {
+        await message.reply('🏓 Pong!');
+    }
+
     const dicePattern = /(dd\d+|(\d+)d(\d+))/i;
     const match = message.content.match(dicePattern);
 
