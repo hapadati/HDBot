@@ -3,14 +3,15 @@ import { Client, GatewayIntentBits, Routes, EmbedBuilder } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
 import { REST } from '@discordjs/rest';
+import nodemailer from 'nodemailer';
+
+dotenv.config();
 
 // コマンドのインポート
 import { pingCommand } from './commands/utils/ping.js';
 import { mentionCommand } from './commands/utils/mention.js'; 
 import { handleRollCommand } from './commands/utils/roll.js';
 import { handleMessageRoll } from './commands/utils/dirdice.js';
-
-dotenv.config();
 
 // Discord Botクライアントを作成
 const client = new Client({
@@ -56,6 +57,7 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
         console.log('Successfully reloaded application (/) commands.');
     } catch (error) {
         console.error('❌ コマンド登録エラー:', error);
+        sendErrorEmail('Slash Command Registration Error', `エラー内容:\n${error.message}\n${error.stack}`);
     }
 })();
 
@@ -70,12 +72,17 @@ client.on('interactionCreate', async (interaction) => {
 
     const { commandName } = interaction;
 
-    if (commandName === 'ping') {
-        await pingCommand.execute(interaction);
-    } else if (commandName === 'mention') {
-        await mentionCommand.execute(interaction);
-    } else if (commandName === 'roll') {
-        await handleRollCommand(interaction);
+    try {
+        if (commandName === 'ping') {
+            await pingCommand.execute(interaction);
+        } else if (commandName === 'mention') {
+            await mentionCommand.execute(interaction);
+        } else if (commandName === 'roll') {
+            await handleRollCommand(interaction);
+        }
+    } catch (error) {
+        console.error('❌ コマンド実行エラー:', error);
+        sendErrorEmail('Command Execution Error', `エラー内容:\n${error.message}\n${error.stack}`);
     }
 });
 
@@ -83,18 +90,23 @@ client.on('interactionCreate', async (interaction) => {
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
 
-    // サイコロの形式にマッチするメッセージの場合
     const dicePattern = /(dd\d+|(\d+)d(\d+))/i;
     const match = message.content.match(dicePattern);
 
     if (match) {
-        await handleRollCommand(message);
+        try {
+            await handleRollCommand(message);
+        } catch (error) {
+            console.error('❌ サイコロエラー:', error);
+            sendErrorEmail('Dice Roll Error', `エラー内容:\n${error.message}\n${error.stack}`);
+        }
     }
 });
 
 // エラーハンドリング
-client.on('error', (error) => {
-    console.error('❌ Discord クライアントエラー:', error);
+client.on('error', (error) => { 
+    console.error('❌ Discord クライアントエラー:', error); 
+    sendErrorEmail('Discord Client Error', `エラー内容:\n${error.message}\n${error.stack}`);
 });
 
 // プロセス終了時の処理
@@ -108,6 +120,7 @@ process.on('SIGINT', () => {
 client.login(process.env.DISCORD_TOKEN)
     .catch(error => {
         console.error('❌ ログインに失敗しました:', error);
+        sendErrorEmail('Login Error', `エラー内容:\n${error.message}\n${error.stack}`);
         process.exit(1);
     });
 
@@ -126,3 +139,30 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`🌐 Web サーバーがポート ${port} で起動しました`);
 });
+
+// エラーメール送信関数
+async function sendErrorEmail(subject, message) {
+    const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+        },
+    });
+
+    const mailOptions = {
+        from: process.env.SMTP_USER,
+        to: process.env.NOTIFY_EMAIL,
+        subject: subject,
+        text: message,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('✅ エラーメールを送信しました');
+    } catch (error) {
+        console.error('❌ エラーメール送信エラー:', error);
+    }
+}
