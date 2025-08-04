@@ -79,7 +79,7 @@ client.on('messageCreate', async (message) => {
 
     // 通常メッセージで「ping」と送信された場合
     if (message.content.toLowerCase() === 'ping') {
-        await message.reply('Pong!'); // 「Pong!」と返信
+        await message.reply('🏓 Pong!'); // 「🏓 Pong!」と返信
     }
 
     // サイコロの形式にマッチするメッセージの場合
