@@ -61,7 +61,17 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 // サイコロを振る関数
 function rollDice(dice) {
-    const [count, max] = dice.split('d').map(Number);
+    let count, max;
+
+    // dd形式の場合
+    if (dice.startsWith('dd')) {
+        count = 1; // dd形式は1回のみ
+        max = parseInt(dice.slice(2));
+    }
+    // 通常のd形式の場合
+    else if (dice.includes('d')) {
+        [count, max] = dice.split('d').map(Number);
+    }
 
     if (isNaN(count) || isNaN(max)) {
         throw new Error('無効なサイコロ形式です。');
@@ -100,24 +110,29 @@ async function handleRollCommand(interaction) {
                 embedColor = 0xff0000; // 赤
             }
         } else {
-            resultMessage = `出目: ${resultDescription}`;
-
             // 1d100 の場合の特殊処理
-            if (rolls[0] === 1) {
-                resultMessage += ' (圧倒的成功！)';
-                embedColor = 0x00ff00; // 緑
-            } else if (rolls[0] >= 96) {
-                resultMessage += ' (圧倒的失敗！)';
-                embedColor = 0xff0000; // 赤
-            } else if (rolls[0] <= 5) {
-                resultMessage += ' (圧倒的成功！)';
-                embedColor = 0x00ff00; // 緑
-            } else if (rolls[0] >= 96) {
-                resultMessage += ' (圧倒的失敗！)';
-                embedColor = 0xff0000; // 赤
+            if (dice === '1d100') {
+                resultMessage = `出目: ${resultDescription}`;
+
+                if (rolls[0] === 1) {
+                    resultMessage += ' (1クリティカル！)';
+                    embedColor = 0x00ff00; // 緑
+                } else if (rolls[0] >= 2 && rolls[0] <= 5) {
+                    resultMessage += ' (クリティカル！)';
+                    embedColor = 0x00ff00; // 緑
+                } else if (rolls[0] >= 6 && rolls[0] <= 10) {
+                    resultMessage += ' (スペシャル)';
+                    embedColor = 0x0000ff; // 青
+                } else if (rolls[0] >= 96 && rolls[0] <= 99) {
+                    resultMessage += ' (ファンブル)';
+                    embedColor = 0xff0000; // 赤
+                } else if (rolls[0] === 100) {
+                    resultMessage += ' (100ファンブル)';
+                    embedColor = 0xff0000; // 赤
+                }
             } else {
-                resultMessage += ' (成功)';
-                embedColor = 0x0077ff; // 青
+                // それ以外のサイコロ（1d20 など）の場合、特別なメッセージは追加しない
+                resultMessage = `出目: ${resultDescription}`;
             }
         }
 
@@ -164,12 +179,13 @@ client.on('messageCreate', async (message) => {
 
     const content = message.content.trim().toLowerCase();
 
-    if (content === 'ping') {
-        await message.reply('🏓 Pong!');
-    }
+    const responses = {
+        'ping': '🏓 Pong!',
+        'mention': `👋 ${message.author} が呼びました！`,
+    };
 
-    if (content === 'mention') {
-        await message.reply(`👋 ${message.author} が呼びました！`);
+    if (responses[content]) {
+        await message.reply(responses[content]);
     }
 });
 
