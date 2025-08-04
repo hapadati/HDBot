@@ -1,11 +1,11 @@
-// client.js
-
+// main.mjs
 import { Client, GatewayIntentBits, Routes, REST } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { data as omikujiCommand, execute as omikujiExecute } from './commands/utils/omikuji.js'; // omikuji コマンドをインポート
+import { pingCommand } from './commands/ping.js';  // pingコマンドをインポート
 
 dotenv.config();
 
@@ -24,7 +24,7 @@ const client = new Client({
 const commands = [
     {
         name: 'ping',
-        description: 'Ping Pong!',
+        description: 'Ping! Pong! と応答します。',
     },
     omikujiCommand,  // おみくじコマンドを追加
     {
@@ -72,8 +72,7 @@ client.on('interactionCreate', async (interaction) => {
 
     if (commandName === 'ping') {
         // スラッシュコマンドの「ping」に反応
-        if (interaction.user.bot) return; // ボットからの「ping」は無視
-        await interaction.reply('🏓 Pong!');
+        await pingCommand.execute(interaction);  // ここで pingCommand を実行
     } else if (commandName === 'おみくじ') {
         // おみくじコマンドの実行
         await omikujiExecute(interaction);
@@ -102,6 +101,9 @@ async function handleRollCommand(interaction) {
 // メッセージ処理（通常メッセージで「ping」に反応）
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;  // ボットメッセージを無視
+
+    // スラッシュコマンドのメッセージは無視
+    if (message.content.startsWith('/')) return;
 
     if (message.content.toLowerCase() === 'ping') {
         // 通常メッセージで「ping」に反応
@@ -133,7 +135,7 @@ client.login(process.env.DISCORD_TOKEN)
     .catch(error => {
         console.error('❌ ログインに失敗しました:', error);
         process.exit(1);
-});
+    });
 
 // Express Webサーバーの設定（Render用）
 const app = express();
