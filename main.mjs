@@ -1,5 +1,5 @@
 // 必要なライブラリを読み込み
-import { Client, GatewayIntentBits, Routes } from 'discord.js';
+import { Client, GatewayIntentBits, Routes, EmbedBuilder } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
 import { REST } from '@discordjs/rest';
@@ -25,6 +25,18 @@ const client = new Client({
 const commands = [
     pingCommand,  // ping コマンド
     mentionCommand,  // mention コマンドを追加
+    {
+        name: 'roll',
+        description: 'サイコロを振る (例: 1d100 または dd50)',
+        options: [
+            {
+                name: 'dice',
+                type: 3, // String type
+                description: 'サイコロの回数と最大の目 (例: 3d6, dd50)',
+                required: true,
+            },
+        ],
+    },  // roll コマンド
 ];
 
 // REST APIを使って、スラッシュコマンドをDiscordに登録
@@ -47,6 +59,83 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     }
 })();
 
+// サイコロを振る関数
+function rollDice(dice) {
+    const [count, max] = dice.split('d').map(Number);
+
+    if (isNaN(count) || isNaN(max)) {
+        throw new Error('無効なサイコロ形式です。');
+    }
+
+    const rolls = [];
+    for (let i = 0; i < count; i++) {
+        rolls.push(Math.floor(Math.random() * max) + 1);
+    }
+
+    return rolls;
+}
+
+// roll コマンドの実行処理
+async function handleRollCommand(interaction) {
+    const dice = interaction.options.getString('dice');
+    let rolls;
+    let resultMessage = '';
+    let embedColor = 0x000000; // 黒色デフォルト
+
+    try {
+        // サイコロを振る
+        rolls = rollDice(dice);
+        const total = rolls.reduce((a, b) => a + b, 0);
+        const resultDescription = rolls.join(', ') + ` (合計: ${total})`;
+
+        // `dd〇〇` の場合、成功/失敗判定
+        if (dice.startsWith('dd')) {
+            const target = parseInt(dice.slice(2));
+
+            if (rolls[0] <= target) {
+                resultMessage = `成功！出目: ${rolls[0]}`;
+                embedColor = 0x0077ff; // 青
+            } else {
+                resultMessage = `失敗！出目: ${rolls[0]}`;
+                embedColor = 0xff0000; // 赤
+            }
+        } else {
+            resultMessage = `出目: ${resultDescription}`;
+
+            // 1d100 の場合の特殊処理
+            if (rolls[0] === 1) {
+                resultMessage += ' (圧倒的成功！)';
+                embedColor = 0x00ff00; // 緑
+            } else if (rolls[0] >= 96) {
+                resultMessage += ' (圧倒的失敗！)';
+                embedColor = 0xff0000; // 赤
+            } else if (rolls[0] <= 5) {
+                resultMessage += ' (圧倒的成功！)';
+                embedColor = 0x00ff00; // 緑
+            } else if (rolls[0] >= 96) {
+                resultMessage += ' (圧倒的失敗！)';
+                embedColor = 0xff0000; // 赤
+            } else {
+                resultMessage += ' (成功)';
+                embedColor = 0x0077ff; // 青
+            }
+        }
+
+        // 結果の埋め込みメッセージ
+        const embed = new EmbedBuilder()
+            .setTitle(`${interaction.user.username} のサイコロ結果`)
+            .setDescription(resultMessage)
+            .setColor(embedColor)
+            .setFooter({ text: 'サイコロ結果' })
+            .setTimestamp();
+
+        await interaction.reply({ embeds: [embed] });
+    } catch (error) {
+        console.error('❌ サイコロエラー:', error);
+        await interaction.reply(`❌ エラーが発生しました: ${error.message}`);
+    }
+}
+
 // Botが起動完了したときの処理
 client.once('ready', () => {
     console.log(`🎉 ${client.user.tag} が正常に起動しました！`);
@@ -59,11 +148,12 @@ client.on('interactionCreate', async (interaction) => {
 
     const { commandName } = interaction;
 
-    // コマンド名に基づいて適切な処理を呼び出し
     if (commandName === 'ping') {
         await pingCommand.execute(interaction); // インポートしたコマンドのexecuteを呼び出す
     } else if (commandName === 'mention') {
         await mentionCommand.execute(interaction); // mentionコマンドの処理
+    } else if (commandName === 'roll') {
+        await handleRollCommand(interaction); // rollコマンドの処理
     }
 });
 
