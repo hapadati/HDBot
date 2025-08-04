@@ -7,7 +7,8 @@ import { REST } from '@discordjs/rest';
 // コマンドのインポート
 import { pingCommand } from './commands/utils/ping.js';
 import { mentionCommand } from './commands/utils/mention.js'; 
-import { handleRollCommand } from './commands/utils/dirdice.js';
+import { handleRollCommand } from './commands/utils/roll.js';
+import { handleMessageRoll } from './commands/utils/dirdice.js';
 
 dotenv.config();
 
