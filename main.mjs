@@ -1,4 +1,5 @@
 // client.js
+
 import { Client, GatewayIntentBits, Routes, REST } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -70,7 +71,8 @@ client.on('interactionCreate', async (interaction) => {
     const { commandName } = interaction;
 
     if (commandName === 'ping') {
-        // ping コマンドの実行
+        // スラッシュコマンドの「ping」に反応
+        if (interaction.user.bot) return; // ボットからの「ping」は無視
         await interaction.reply('🏓 Pong!');
     } else if (commandName === 'おみくじ') {
         // おみくじコマンドの実行
@@ -99,9 +101,10 @@ async function handleRollCommand(interaction) {
 
 // メッセージ処理（通常メッセージで「ping」に反応）
 client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
+    if (message.author.bot) return;  // ボットメッセージを無視
 
     if (message.content.toLowerCase() === 'ping') {
+        // 通常メッセージで「ping」に反応
         await message.reply('🏓 Pong!');
     }
 
@@ -130,7 +133,7 @@ client.login(process.env.DISCORD_TOKEN)
     .catch(error => {
         console.error('❌ ログインに失敗しました:', error);
         process.exit(1);
-    });
+});
 
 // Express Webサーバーの設定（Render用）
 const app = express();
