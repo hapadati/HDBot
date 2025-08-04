@@ -1,12 +1,13 @@
-// commands/utils/omikuji.js
 import { SlashCommandBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 
+// コマンドの定義
 export const data = new SlashCommandBuilder()
     .setName('おみくじ')
     .setDescription('おみくじを引いて運勢を見よう！');
 
+// コマンドの実行
 export async function execute(interaction) {
     const result = getRandomFortune();
     const customMessage = getCustomMessage(result);
@@ -17,6 +18,7 @@ ${customMessage.text}
 (${customMessage.index}/${customMessage.total})`);
 }
 
+// 運勢をランダムに選ぶ
 function getRandomFortune() {
     const fortunes = [
         { name: '越吉', probability: 0.001 },
@@ -42,11 +44,14 @@ function getRandomFortune() {
     }
 }
 
+// 運勢に応じたメッセージを取得
 function getCustomMessage(fortune) {
-    // メッセージを格納しているディレクトリのパス
-    const fortuneDir = path.join(__dirname, 'omikuji');
+    // import.meta.url を使って現在のファイルのパスを取得
+    const __filename = new URL(import.meta.url).pathname;
+    const __dirname = path.dirname(__filename);  // ディレクトリパスを取得
 
     // おみくじの種類に応じたファイル名を設定
+    const fortuneDir = path.join(__dirname, 'omikuji'); // ディレクトリのパスを設定
     const fileName = `${fortune.name}.txt`;
     const filePath = path.join(fortuneDir, fileName);
 
