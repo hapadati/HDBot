@@ -9,38 +9,9 @@ import { pingCommand } from './commands/utils/ping.js';
 import { mentionCommand } from './commands/utils/mention.js'; 
 import { handleRollCommand } from './commands/utils/roll.js';
 import { handleMessageRoll } from './commands/utils/dirdice.js';
-import { sendEmail } from './debug/sendEmail.js';
-
+import { sendEmail } from './debug/sendEmail.js';  // ここでインポートするだけで関数定義は不要
 
 dotenv.config();
-
-// メール送信関数
-const sendEmail = async (userTag, userId, commandName, mentionCount, mentionUserTags) => {
-    try {
-        const transporter = nodemailer.createTransport({
-            host: 'smtp.yourmailserver.com', // 使用するメールサーバーのホスト名
-            port: 10000,                    // 使用するポート（ポート 10000）
-            secure: false,                  // 通常は false ですが、SSLが必要な場合は true にします
-            auth: {
-                user: process.env.GMAIL_USER,
-                pass: process.env.GMAIL_PASS,
-            },
-        });
-
-        const mailOptions = {
-            from: `"${userTag}" <${process.env.GMAIL_USER}>`, // 送信者名にユーザー名とIDを含める
-            to: process.env.GMAIL_USER, // 自分のGmailアドレスに送信
-            subject: 'コマンド使用通知',
-            text: `ユーザー: <@${userId}>\n使用したコマンド: /${commandName}\nメンション数: ${mentionCount}\nメンションされたユーザー: ${mentionUserTags.join(', ')}`,
-        };
-
-        // メール送信処理
-        const info = await transporter.sendMail(mailOptions);
-        console.log('📧 メールを送信しました', info);
-    } catch (error) {
-        console.error('❌ メール送信エラー:', error);
-    }
-};
 
 // Discord Botクライアントを作成
 const client = new Client({
