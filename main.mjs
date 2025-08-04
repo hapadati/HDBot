@@ -74,11 +74,17 @@ client.on('interactionCreate', async (interaction) => {
 
     try {
         if (commandName === 'ping') {
+            await interaction.deferReply(); // 応答を遅延させる
             await pingCommand.execute(interaction);
+            await interaction.editReply("Pong!");
         } else if (commandName === 'mention') {
+            await interaction.deferReply();
             await mentionCommand.execute(interaction);
+            await interaction.editReply("Mention received!");
         } else if (commandName === 'roll') {
+            await interaction.deferReply();
             await handleRollCommand(interaction);
+            await interaction.editReply("Rolling done!");
         }
     } catch (error) {
         console.error('❌ コマンド実行エラー:', error);
@@ -123,22 +129,6 @@ client.login(process.env.DISCORD_TOKEN)
         sendErrorEmail('Login Error', `エラー内容:\n${error.message}\n${error.stack}`);
         process.exit(1);
     });
-
-// Express Webサーバーの設定（Render用）
-const app = express();
-const port = process.env.PORT || 3000;
-
-app.get('/', (req, res) => {
-    res.json({
-        status: 'Bot is running! 🤖',
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString()
-    });
-});
-
-app.listen(port, () => {
-    console.log(`🌐 Web サーバーがポート ${port} で起動しました`);
-});
 
 // エラーメール送信関数
 async function sendErrorEmail(subject, message) {
