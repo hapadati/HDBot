@@ -4,7 +4,7 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { data as omikujiCommand, execute as omikujiExecute } from './commands/utils/omikuji.js'; // omikuji コマンドをインポート
-import { pingCommand } from './commands/ulits/ping.js';  // pingコマンドをインポート
+import { pingCommand } from './commands/ulits/ping.js';// pingコマンドをインポート
 import { handleMessageRoll } from './commands/utils/dirdice.js'; // dirdice.js からサイコロの処理をインポート
 import { mentionCommand } from './commands/ulits/mention.js'; // mentionコマンドをインポート
 import sgMail from '@sendgrid/mail'; // SendGrid モジュールのインポート
