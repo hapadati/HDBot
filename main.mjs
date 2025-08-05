@@ -28,18 +28,6 @@ const commands = [
     },
     omikujiCommand,  // おみくじコマンドを追加
     mentionCommand,  // mentionコマンドを追加
-    {
-        name: 'roll',
-        description: 'サイコロを振る (例: 1d100 または dd50)',
-        options: [
-            {
-                name: 'dice',
-                type: 3,
-                description: 'サイコロの回数と最大の目 (例: 3d6, dd50)',
-                required: true,
-            },
-        ],
-    },
 ];
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -77,9 +65,6 @@ client.on('interactionCreate', async (interaction) => {
     } else if (commandName === 'おみくじ') {
         // おみくじコマンドの実行
         await omikujiExecute(interaction);
-    } else if (commandName === 'roll') {
-        // roll コマンドの処理
-        await handleRollCommand(interaction);
     } else if (commandName === 'mention') {
         // mention コマンドの処理
         await mentionCommand.execute(interaction); // ここで mentionCommand を実行
