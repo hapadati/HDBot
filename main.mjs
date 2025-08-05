@@ -6,7 +6,7 @@ import path from 'path';
 import { data as omikujiCommand, execute as omikujiExecute } from './commands/utils/omikuji.js'; // omikuji コマンドをインポート
 import { pingCommand } from './commands/utils/ping.js';// pingコマンドをインポート
 import { handleMessageRoll } from './commands/utils/dirdice.js'; // dirdice.js からサイコロの処理をインポート
-import { mentionCommand } from './commands/ulits/mention.js'; // mentionコマンドをインポート
+import { mentionCommand } from './commands/utils/mention.js'; // mentionコマンドをインポート
 import sgMail from '@sendgrid/mail'; // SendGrid モジュールのインポート
 
 // .env ファイルの読み込み
