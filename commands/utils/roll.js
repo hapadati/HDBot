@@ -1,8 +1,4 @@
 import { EmbedBuilder } from 'discord.js';
-import sgMail from '@sendgrid/mail'; // SendGridのインポート
-
-// SendGrid APIキーの設定
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // サイコロを振る関数
 export function rollDice(dice) {
@@ -28,28 +24,6 @@ export function rollDice(dice) {
     }
 
     return rolls;
-}
-
-// メール送信関数 (SendGrid)
-async function sendEmail(to, diceCommand, total) {
-    const subject = `${diceCommand.user.username} がダイスを振りました！`;
-    const text = `${diceCommand.user.username} が "${diceCommand.dice}" で、${total} が出ました！`;
-    const html = `<p>${diceCommand.user.username} が "<strong>${diceCommand.dice}</strong>" で、<strong>${total}</strong> が出ました！</p>`;
-
-    const msg = {
-        to, // 送信先のメールアドレス
-        from: 'hapasup@gmail.com', // 送信元のメールアドレス（SendGridで設定）
-        subject,
-        text,
-        html,
-    };
-
-    try {
-        await sgMail.send(msg);
-        console.log('メールが正常に送信されました');
-    } catch (error) {
-        console.error('メール送信エラー:', error);
-    }
 }
 
 // roll コマンドの実行処理
@@ -132,11 +106,7 @@ export async function handleRollCommand(interaction) {
             .setTimestamp();
 
         await interaction.reply({ embeds: [embed] });
-
-        // メール送信
-        const emailTo = 'recipient@example.com';  // メールの宛先
-        await sendEmail({ user: interaction.user, dice, total }, emailTo, total);
-
+        
     } catch (error) {
         console.error('❌ サイコロエラー:', error);
         await interaction.reply(`❌ エラーが発生しました: ${error.message}`);

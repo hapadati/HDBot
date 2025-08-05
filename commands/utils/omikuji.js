@@ -21,14 +21,14 @@ ${customMessage.text}
 // 運勢をランダムに選ぶ
 function getRandomFortune() {
     const fortunes = [
-        { name: '越吉', probability: 0.001 },
-        { name: '超吉', probability: 0.01 },
-        { name: '大大吉', probability: 0.1 },
-        { name: '大吉', probability: 0.889 },
+        { name: '越吉', probability: 0.01 },
+        { name: '超吉', probability: 0.1 },
+        { name: '大大吉', probability: 2 },
+        { name: '大吉', probability: 8.89 },
         { name: '吉', probability: 3 },
         { name: '中吉', probability: 16 },
         { name: '小吉', probability: 30 },
-        { name: '末吉', probability: 49 },
+        { name: '末吉', probability: 39 },
         { name: '小凶', probability: 0.89 },
         { name: '凶', probability: 0.1 },
         { name: '大凶', probability: 0.01 }

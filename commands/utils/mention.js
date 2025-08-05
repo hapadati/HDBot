@@ -34,8 +34,5 @@ export const mentionCommand = {
 
         await interaction.reply(mentionMessage);
         console.log(`📝 ${interaction.user.tag} が /mention コマンドを使用`);
-
-        // メール送信機能を一時的に削除
-        // await sendEmail(interaction.user.tag, 'mention');
     },
 };

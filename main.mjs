@@ -1,19 +1,13 @@
 import { Client, GatewayIntentBits, Routes, REST } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
-import fs from 'fs';
-import path from 'path';
 import { data as omikujiCommand, execute as omikujiExecute } from './commands/utils/omikuji.js'; // omikuji コマンドをインポート
-import { pingCommand } from './commands/utils/ping.js';// pingコマンドをインポート
+import { pingCommand } from './commands/utils/ping.js'; // pingコマンドをインポート
 import { handleMessageRoll } from './commands/utils/dirdice.js'; // dirdice.js からサイコロの処理をインポート
 import { mentionCommand } from './commands/utils/mention.js'; // mentionコマンドをインポート
-import sgMail from '@sendgrid/mail'; // SendGrid モジュールのインポート
 
 // .env ファイルの読み込み
 dotenv.config();
-
-// SendGrid APIキーを設定
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Discord Bot クライアントを作成
 const client = new Client({
@@ -69,15 +63,6 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 // Botが起動完了したときの処理
 client.once('ready', async () => {
     console.log(`🎉 ${client.user.tag} が正常に起動しました！`);
-
-    // Botが起動した際にメールを送信
-    await sendEmail(
-        'recipient@example.com', // 宛先メールアドレス
-        'Botが起動しました！', // メールの件名
-        'Botが無事に起動しました！', // テキストメールの内容
-        '<strong>Botが正常に起動しました！</strong>' // HTML形式のメール内容
-    );
-    console.log('起動通知のメールが送信されました！');
 });
 
 // スラッシュコマンドの処理
@@ -105,24 +90,6 @@ client.on('interactionCreate', async (interaction) => {
 async function handleRollCommand(interaction) {
     const dice = interaction.options.getString('dice');
     await handleMessageRoll(interaction);  // dirdice.js の handleMessageRoll を呼び出す
-}
-
-// メール送信関数 (SendGrid)
-async function sendEmail(to, subject, text, html) {
-    const msg = {
-        to,  // 受信者のメールアドレス
-        from: 'hapasup@gmail.com', // 送信者のメールアドレス（SendGridで設定したもの）
-        subject,
-        text,  // テキストメールの内容
-        html,  // HTML形式メールの内容
-    };
-
-    try {
-        await sgMail.send(msg);
-        console.log('メールが正常に送信されました');
-    } catch (error) {
-        console.error('メール送信エラー:', error);
-    }
 }
 
 // メッセージ処理（通常メッセージで「ping」に反応）
