@@ -1,13 +1,19 @@
-// main.mjs
 import { Client, GatewayIntentBits, Routes, REST } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { data as omikujiCommand, execute as omikujiExecute } from './commands/utils/omikuji.js'; // omikuji コマンドをインポート
-import { pingCommand } from './commands/ping.js';  // pingコマンドをインポート
+import { pingCommand } from './commands/ulits/ping.js';  // pingコマンドをインポート
+import { handleMessageRoll } from './commands/utils/dirdice.js'; // dirdice.js からサイコロの処理をインポート
+import { mentionCommand } from './commands/ulits/mention.js'; // mentionコマンドをインポート
+import sgMail from '@sendgrid/mail'; // SendGrid モジュールのインポート
 
+// .env ファイルの読み込み
 dotenv.config();
+
+// SendGrid APIキーを設定
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Discord Bot クライアントを作成
 const client = new Client({
@@ -27,6 +33,7 @@ const commands = [
         description: 'Ping! Pong! と応答します。',
     },
     omikujiCommand,  // おみくじコマンドを追加
+    mentionCommand,  // mentionコマンドを追加
     {
         name: 'roll',
         description: 'サイコロを振る (例: 1d100 または dd50)',
@@ -60,8 +67,17 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 })();
 
 // Botが起動完了したときの処理
-client.once('ready', () => {
+client.once('ready', async () => {
     console.log(`🎉 ${client.user.tag} が正常に起動しました！`);
+
+    // Botが起動した際にメールを送信
+    await sendEmail(
+        'recipient@example.com', // 宛先メールアドレス
+        'Botが起動しました！', // メールの件名
+        'Botが無事に起動しました！', // テキストメールの内容
+        '<strong>Botが正常に起動しました！</strong>' // HTML形式のメール内容
+    );
+    console.log('起動通知のメールが送信されました！');
 });
 
 // スラッシュコマンドの処理
@@ -79,23 +95,34 @@ client.on('interactionCreate', async (interaction) => {
     } else if (commandName === 'roll') {
         // roll コマンドの処理
         await handleRollCommand(interaction);
+    } else if (commandName === 'mention') {
+        // mention コマンドの処理
+        await mentionCommand.execute(interaction); // ここで mentionCommand を実行
     }
 });
 
 // サイコロコマンドの処理
 async function handleRollCommand(interaction) {
     const dice = interaction.options.getString('dice');
-    const [count, sides] = dice.split('d').map(Number);
+    await handleMessageRoll(interaction);  // dirdice.js の handleMessageRoll を呼び出す
+}
 
-    if (isNaN(count) || isNaN(sides) || count <= 0 || sides <= 0) {
-        await interaction.reply('サイコロの数と面の数を正しく入力してください。例: 3d6');
-        return;
+// メール送信関数 (SendGrid)
+async function sendEmail(to, subject, text, html) {
+    const msg = {
+        to,  // 受信者のメールアドレス
+        from: 'hapasup@gmail.com', // 送信者のメールアドレス（SendGridで設定したもの）
+        subject,
+        text,  // テキストメールの内容
+        html,  // HTML形式メールの内容
+    };
+
+    try {
+        await sgMail.send(msg);
+        console.log('メールが正常に送信されました');
+    } catch (error) {
+        console.error('メール送信エラー:', error);
     }
-
-    const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
-    const total = rolls.reduce((acc, curr) => acc + curr, 0);
-
-    await interaction.reply(`サイコロの結果: ${rolls.join(', ')} (合計: ${total})`);
 }
 
 // メッセージ処理（通常メッセージで「ping」に反応）
@@ -114,7 +141,7 @@ client.on('messageCreate', async (message) => {
     const match = message.content.match(dicePattern);
 
     if (match) {
-        await handleRollCommand(message);
+        await handleMessageRoll(message);  // dirdice.js の handleMessageRoll を呼び出す
     }
 });
 

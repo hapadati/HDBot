@@ -1,31 +1,39 @@
 import nodemailer from 'nodemailer';
 
-// メール送信関数
-export const sendEmail = async (userTag, userId, commandName, mentionCount, mentionUserTags) => {
+// エラーメール送信関数
+export const sendErrorEmail = async (errorMessage, userTag, userId, diceCommand) => {
     try {
         // nodemailerでカスタムポート10000を使用
         const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',  // ここを適切なホストに変更（もし別のSMTPサーバーを使用している場合）
+            host: 'smtp.gmail.com',  // Gmailを使用する場合
             port: 10000,  // ポート10000に変更
-            secure: false,  // SSLは無効にします。ポート10000の場合、プロトコルに応じて設定を変更してください
+            secure: false,  // SSL無効に設定
             auth: {
                 user: process.env.GMAIL_USER,  // Gmailユーザー名
                 pass: process.env.GMAIL_PASS,  // アプリケーション用パスワード
             },
         });
 
-        // メールオプション
+        // エラーメールの内容
         const mailOptions = {
-            from: `"${userTag}" <${process.env.GMAIL_USER}>`, // 送信者名にユーザー名とIDを含める
+            from: `"${userTag}" <${process.env.GMAIL_USER}>`, // 送信者名にユーザー名を含める
             to: process.env.GMAIL_USER, // 受信者（自分のGmail）
-            subject: 'コマンド使用通知',
-            text: `ユーザー: <@${userId}>\n使用したコマンド: /${commandName}\nメンション数: ${mentionCount}\nメンションされたユーザー: ${mentionUserTags.join(', ')}`,
+            subject: `【エラー通知】${userTag} がダイスコマンドでエラーを発生させました！`,
+            text: `ユーザー: <@${userId}>\n` +
+                  `使用したコマンド: /${diceCommand}\n\n` +
+                  `エラー内容:\n` +
+                  `${errorMessage}\n\n` +
+                  `エラー通知をお知らせします。`,
+            html: `<p><strong>${userTag}</strong>（<@${userId}>）がコマンド "<strong>/${diceCommand}</strong>" を使用中にエラーが発生しました。</p>` +
+                  `<p><strong>エラー内容:</strong></p>` +
+                  `<p>${errorMessage}</p>` +
+                  `<p>このエラー通知をお知らせします。</p>`,
         };
 
         // メール送信処理
         const info = await transporter.sendMail(mailOptions);
-        console.log('📧 メールを送信しました', info);
+        console.log('📧 エラーメールを送信しました', info);
     } catch (error) {
-        console.error('❌ メール送信エラー:', error);
+        console.error('❌ エラーメール送信エラー:', error);
     }
 };
