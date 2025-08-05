@@ -1,3 +1,4 @@
+// ping.js
 export const pingCommand = {
     name: 'ping',
     description: 'Ping! Pong! と応答します。',
