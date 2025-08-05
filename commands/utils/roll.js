@@ -3,7 +3,7 @@ import { EmbedBuilder } from 'discord.js';
 // サイコロを振る関数
 export function rollDice(dice) {
     let count, max;
-
+    
     // dd形式の場合
     if (dice.startsWith('dd')) {
         count = 1; // dd形式は1回のみ
@@ -12,6 +12,15 @@ export function rollDice(dice) {
     // 通常のd形式の場合
     else if (dice.includes('d')) {
         [count, max] = dice.split('d').map(Number);
+    }
+    // cc(±A B)形式の場合
+    else if (dice.startsWith('cc')) {
+        count = 1; // 1回のみ
+        max = 100;
+    }
+    // その他の形式はエラー
+    else {
+        throw new Error('無効なサイコロ形式です。');
     }
 
     if (isNaN(count) || isNaN(max)) {
@@ -26,7 +35,18 @@ export function rollDice(dice) {
     return rolls;
 }
 
-// roll コマンドの実行処理
+// 判定結果を埋め込む関数
+export function createEmbedResult(userName, resultMessage, embedColor) {
+    const embed = new EmbedBuilder()
+        .setTitle(`${userName} のサイコロ結果`)
+        .setDescription(resultMessage)
+        .setColor(embedColor)
+        .setFooter({ text: 'サイコロ結果' })
+        .setTimestamp();
+    return embed;
+}
+
+// コマンドの実行処理
 export async function handleRollCommand(interaction) {
     const dice = interaction.options.getString('dice');
     let rolls;
@@ -98,13 +118,7 @@ export async function handleRollCommand(interaction) {
         }
 
         // 結果の埋め込みメッセージ
-        const embed = new EmbedBuilder()
-            .setTitle(`${interaction.user.username} のサイコロ結果`)
-            .setDescription(resultMessage)
-            .setColor(embedColor)
-            .setFooter({ text: 'サイコロ結果' })
-            .setTimestamp();
-
+        const embed = createEmbedResult(interaction.user.username, resultMessage, embedColor);
         await interaction.reply({ embeds: [embed] });
         
     } catch (error) {
