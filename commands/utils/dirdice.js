@@ -25,7 +25,7 @@ export function rollNormalDice(dice) {
     return rolls;
 }
 
-// dd〇〇 の判定
+// dd形式ダイスの判定処理
 export function handleDdDice(dice, rolls) {
     const target = parseInt(dice.slice(2));
     const randomRoll = Math.floor(Math.random() * 100) + 1;
@@ -52,7 +52,7 @@ export function handleDdDice(dice, rolls) {
     return { resultMessage, embedColor };
 }
 
-// 通常のd形式の処理
+// 通常のダイスの処理
 export function handleNormalDice(dice, rolls) {
     const resultDescription = rolls.join(', ') + ` (合計: ${rolls.reduce((a, b) => a + b, 0)})`;
     let resultMessage = `出目: ${resultDescription}`;
@@ -107,45 +107,80 @@ export function getSettaiGyakutaiResult(diceType) {
     return { resultMessage, embedColor };
 }
 
+// ダイスアニメーションの表示関数
+async function showRollingEmbed(message, diceResultCallback, dice) {
+    const rollingEmbed = new EmbedBuilder()
+        .setTitle(`${message.author.username} のサイコロ振り中...`)
+        .setColor(0xffff00)
+        .setDescription(`振っています... ${dice}`);  // ダイスの形式を表示
+
+    // 最初のメッセージをボットが送信
+    const rollingMessage = await message.reply({ embeds: [rollingEmbed] });
+
+    const maxRoll = parseInt(dice.split('d')[1]);  // ダイスの最大値を取得
+    const rollingStages = 15;  // アニメーションの回数（100回）
+
+    // アニメーションを100回繰り返す
+    for (let i = 0; i < rollingStages; i++) {
+        const randomRoll = Math.floor(Math.random() * maxRoll) + 1;  // 最大値までのランダムな目
+        rollingEmbed.setDescription(`振っています... ${dice} ${randomRoll}`);
+        await rollingMessage.edit({ embeds: [rollingEmbed] });
+        await new Promise(resolve => setTimeout(resolve, 100));  // 0.1秒待機（スピードを速くする）
+    }
+
+    // 最終的なダイス結果を取得
+    const { resultMessage, embedColor } = await diceResultCallback();
+    const finalEmbed = new EmbedBuilder()
+        .setTitle(`${message.author.username} のサイコロ結果`)
+        .setDescription(resultMessage)  // 「出目:」を含んだ結果メッセージを直接表示
+        .setColor(embedColor)  // 結果に合わせた色
+        .setFooter({ text: 'サイコロ結果' })
+        .setTimestamp();
+
+    // 最終結果を同じメッセージに追加
+    await rollingMessage.edit({ embeds: [finalEmbed] });
+}
+
 // ダイスコマンドのメイン処理
 export async function handleMessageRoll(message) {
     const dice = message.content.trim();
-    let rolls;
+    let rolls = [];
     let resultMessage = '';
     let embedColor = 0x000000; // 黒色デフォルト
 
+    // 特別ダイス処理（接待・虐待）
     if (dice === 'settai' || dice === 'gyakutai') {
         const { resultMessage: specialResult, embedColor: specialColor } = getSettaiGyakutaiResult(dice);
         resultMessage = specialResult;
         embedColor = specialColor;
     } else if (/^(\d+d\d+|dd\d+)$/.test(dice)) {
         try {
+            // 通常ダイスまたはdd形式ダイスを振る処理
             rolls = rollNormalDice(dice);
-            if (dice.startsWith('dd')) {
-                const { resultMessage: ddResult, embedColor: ddColor } = handleDdDice(dice, rolls);
-                resultMessage = ddResult;
-                embedColor = ddColor;
-            } else {
-                const { resultMessage: normalResult, embedColor: normalColor } = handleNormalDice(dice, rolls);
-                resultMessage = normalResult;
-                embedColor = normalColor;
-            }
+
+            // ダイス結果取得用のコールバック関数を準備
+            const diceResultCallback = async () => {
+                if (dice.startsWith('dd')) {
+                    const { resultMessage: ddResult, embedColor: ddColor } = handleDdDice(dice, rolls);
+                    resultMessage = ddResult;
+                    embedColor = ddColor;
+                } else {
+                    const { resultMessage: normalResult, embedColor: normalColor } = handleNormalDice(dice, rolls);
+                    resultMessage = normalResult;
+                    embedColor = normalColor;
+                }
+                return { resultMessage, embedColor };  // 修正部分：結果メッセージと色を返す
+            };
+
+            // ダイスアニメーションを表示
+            await showRollingEmbed(message, diceResultCallback, dice);
+
         } catch (error) {
             console.error('❌ サイコロエラー:', error);
             await message.reply(`❌ エラーが発生しました: ${error.message}`);
             return;
         }
     } else {
-        await message.reply('❌ 無効なダイスの書式です。');
-        return;
+        await message.reply('❌ 無効なダイスの書式です。例: `2d6`');
     }
-
-    const embed = new EmbedBuilder()
-        .setTitle(`${message.author.username} のサイコロ結果`)
-        .setDescription(resultMessage)
-        .setColor(embedColor)
-        .setFooter({ text: 'サイコロ結果' })
-        .setTimestamp();
-
-    await message.reply({ embeds: [embed] });
 }
