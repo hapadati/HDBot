@@ -5,7 +5,7 @@ import path from 'path';
 // コマンドの定義
 export const data = new SlashCommandBuilder()
     .setName('おみくじ')
-    .setDescription('おみくじを引いて運勢を見よう！');
+    .setDescription("おみくじを引いて運勢を見よう！Let's play Omikuji!");
 
 // コマンドの実行
 export async function execute(interaction) {
