@@ -26,54 +26,59 @@ export function rollNormalDice(dice) {
 }
 
 // dd形式ダイスの判定処理
-export function handleDdDice(dice, rolls) {
-    const target = parseInt(dice.slice(2));
+export function handleDdDice(dice, rolls, modifier = 0) {
+    let target = parseInt(dice.slice(2));
+    target = eval(`${target} ${modifier >= 0 ? '+' : ''}${modifier}`);
+
     const randomRoll = Math.floor(Math.random() * 100) + 1;
     let resultMessage = '';
     let embedColor = 0x000000;
 
     if (randomRoll <= target) {
         if (randomRoll <= 5) {
-            resultMessage = `圧倒的成功！出目: ${randomRoll}`;
-            embedColor = 0x00ff00; // 緑色（圧倒的成功）
+            resultMessage = `圧倒的成功！出目: ${randomRoll} / 目標: ${target}`;
+            embedColor = 0x00ff00;
         } else {
-            resultMessage = `成功！出目: ${randomRoll}`;
-            embedColor = 0x0077ff; // 青色（成功）
+            resultMessage = `成功！出目: ${randomRoll} / 目標: ${target}`;
+            embedColor = 0x0077ff;
         }
     } else {
         if (randomRoll >= 96) {
-            resultMessage = `圧倒的失敗！出目: ${randomRoll}`;
-            embedColor = 0xff0000; // 赤色（圧倒的失敗）
+            resultMessage = `圧倒的失敗！出目: ${randomRoll} / 目標: ${target}`;
+            embedColor = 0xff0000;
         } else {
-            resultMessage = `失敗！出目: ${randomRoll}`;
-            embedColor = 0xff0000; // 赤色（失敗）
+            resultMessage = `失敗！出目: ${randomRoll} / 目標: ${target}`;
+            embedColor = 0xff0000;
         }
     }
     return { resultMessage, embedColor };
 }
 
 // 通常のダイスの処理
-export function handleNormalDice(dice, rolls) {
-    const resultDescription = rolls.join(', ') + ` (合計: ${rolls.reduce((a, b) => a + b, 0)})`;
+export function handleNormalDice(dice, rolls, modifier = 0) {
+    const total = rolls.reduce((a, b) => a + b, 0);
+    const modifiedTotal = eval(`${total} ${modifier >= 0 ? '+' : ''}${modifier}`);
+    const resultDescription = rolls.join(', ') + ` (合計: ${total}${modifier ? ` → 修正後: ${modifiedTotal}` : ''})`;
     let resultMessage = `出目: ${resultDescription}`;
     let embedColor = 0x000000;
 
     if (dice === '1d100') {
-        if (rolls[0] === 1) {
+        const roll = modifiedTotal;
+        if (roll === 1) {
             resultMessage += ' (1クリティカル！)';
-            embedColor = 0x00ff00; // 緑
-        } else if (rolls[0] <= 5) {
+            embedColor = 0x00ff00;
+        } else if (roll <= 5) {
             resultMessage += ' (クリティカル！)';
-            embedColor = 0x00ff00; // 緑
-        } else if (rolls[0] <= 10) {
+            embedColor = 0x00ff00;
+        } else if (roll <= 10) {
             resultMessage += ' (スペシャル)';
-            embedColor = 0x0000ff; // 青
-        } else if (rolls[0] >= 96 && rolls[0] <= 99) {
+            embedColor = 0x0000ff;
+        } else if (roll >= 96 && roll <= 99) {
             resultMessage += ' (ファンブル)';
-            embedColor = 0xff0000; // 赤
-        } else if (rolls[0] === 100) {
+            embedColor = 0xff0000;
+        } else if (roll === 100) {
             resultMessage += ' (100ファンブル)';
-            embedColor = 0xff0000; // 赤
+            embedColor = 0xff0000;
         }
     }
     return { resultMessage, embedColor };
@@ -83,9 +88,9 @@ export function handleNormalDice(dice, rolls) {
 export function applySpecialDice(diceType) {
     let roll;
     if (diceType === 'settai') {
-        roll = Math.floor(Math.random() * 5) + 1; // 1〜5
+        roll = Math.floor(Math.random() * 5) + 1;
     } else if (diceType === 'gyakutai') {
-        roll = Math.floor(Math.random() * 5) + 96; // 96〜100
+        roll = Math.floor(Math.random() * 5) + 96;
     }
     return roll;
 }
@@ -98,89 +103,99 @@ export function getSettaiGyakutaiResult(diceType) {
 
     if (diceType === 'settai') {
         resultMessage = `接待ダイス！出目: ${roll}（プレイヤーに優しい！）`;
-        embedColor = 0x00ff00; // 緑色（接待）
+        embedColor = 0x00ff00;
     } else if (diceType === 'gyakutai') {
         resultMessage = `虐待ダイス！出目: ${roll}（あまりにも過酷！）`;
-        embedColor = 0xff0000; // 赤色（虐待）
+        embedColor = 0xff0000;
     }
 
     return { resultMessage, embedColor };
 }
 
+// ダイス式のパース関数（+ - * / 対応）
+function parseDiceExpression(dice) {
+    const match = dice.match(/^(\d*d\d+|dd\d+)([+\-*/]\d+)?$/);
+    if (!match) return null;
+
+    const baseDice = match[1];
+    const modifierStr = match[2] || '';
+    const modifier = modifierStr ? Number(eval(modifierStr)) : 0;
+
+    return { baseDice, modifier };
+}
+
 // ダイスアニメーションの表示関数
-async function showRollingEmbed(message, diceResultCallback, dice) {
+async function showRollingEmbed(message, diceResultCallback, originalDiceText) {
     const rollingEmbed = new EmbedBuilder()
         .setTitle(`${message.author.username} のサイコロ振り中...`)
         .setColor(0xffff00)
-        .setDescription(`振っています... ${dice}`);  // ダイスの形式を表示
+        .setDescription(`振っています... ${originalDiceText}`);
 
-    // 最初のメッセージをボットが送信
     const rollingMessage = await message.reply({ embeds: [rollingEmbed] });
 
-    const maxRoll = parseInt(dice.split('d')[1]);  // ダイスの最大値を取得
-    const rollingStages = 15;  // アニメーションの回数（100回）
+    const maxRoll = 100;  // 表示用に汎用的に
+    const rollingStages = 15;
 
-    // アニメーションを100回繰り返す
     for (let i = 0; i < rollingStages; i++) {
-        const randomRoll = Math.floor(Math.random() * maxRoll) + 1;  // 最大値までのランダムな目
-        rollingEmbed.setDescription(`振っています... ${dice} ${randomRoll}`);
+        const randomRoll = Math.floor(Math.random() * maxRoll) + 1;
+        rollingEmbed.setDescription(`振っています... ${originalDiceText} ${randomRoll}`);
         await rollingMessage.edit({ embeds: [rollingEmbed] });
-        await new Promise(resolve => setTimeout(resolve, 100));  // 0.1秒待機（スピードを速くする）
+        await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    // 最終的なダイス結果を取得
     const { resultMessage, embedColor } = await diceResultCallback();
     const finalEmbed = new EmbedBuilder()
         .setTitle(`${message.author.username} のサイコロ結果`)
-        .setDescription(resultMessage)  // 「出目:」を含んだ結果メッセージを直接表示
-        .setColor(embedColor)  // 結果に合わせた色
+        .setDescription(resultMessage)
+        .setColor(embedColor)
         .setFooter({ text: 'サイコロ結果' })
         .setTimestamp();
 
-    // 最終結果を同じメッセージに追加
     await rollingMessage.edit({ embeds: [finalEmbed] });
 }
 
 // ダイスコマンドのメイン処理
 export async function handleMessageRoll(message) {
-    const dice = message.content.trim();
+    const input = message.content.trim();
     let rolls = [];
     let resultMessage = '';
-    let embedColor = 0x000000; // 黒色デフォルト
+    let embedColor = 0x000000;
 
-    // 特別ダイス処理（接待・虐待）
-    if (dice === 'settai' || dice === 'gyakutai') {
-        const { resultMessage: specialResult, embedColor: specialColor } = getSettaiGyakutaiResult(dice);
+    if (input === 'settai' || input === 'gyakutai') {
+        const { resultMessage: specialResult, embedColor: specialColor } = getSettaiGyakutaiResult(input);
         resultMessage = specialResult;
         embedColor = specialColor;
-    } else if (/^(\d+d\d+|dd\d+)$/.test(dice)) {
-        try {
-            // 通常ダイスまたはdd形式ダイスを振る処理
-            rolls = rollNormalDice(dice);
+        await message.reply({ embeds: [new EmbedBuilder().setDescription(resultMessage).setColor(embedColor)] });
+        return;
+    }
 
-            // ダイス結果取得用のコールバック関数を準備
+    const parsed = parseDiceExpression(input);
+    if (!parsed) {
+        await message.reply('❌ 無効なダイスの書式です。例: `2d6`, `1d100+10`, `dd20-5`');
+        return;
+    }
+
+    const { baseDice, modifier } = parsed;
+
+    if (/^(\d*d\d+|dd\d+)$/.test(baseDice)) {
+        try {
+            rolls = rollNormalDice(baseDice);
+
             const diceResultCallback = async () => {
-                if (dice.startsWith('dd')) {
-                    const { resultMessage: ddResult, embedColor: ddColor } = handleDdDice(dice, rolls);
-                    resultMessage = ddResult;
-                    embedColor = ddColor;
+                if (baseDice.startsWith('dd')) {
+                    return handleDdDice(baseDice, rolls, modifier);
                 } else {
-                    const { resultMessage: normalResult, embedColor: normalColor } = handleNormalDice(dice, rolls);
-                    resultMessage = normalResult;
-                    embedColor = normalColor;
+                    return handleNormalDice(baseDice, rolls, modifier);
                 }
-                return { resultMessage, embedColor };  // 修正部分：結果メッセージと色を返す
             };
 
-            // ダイスアニメーションを表示
-            await showRollingEmbed(message, diceResultCallback, dice);
+            await showRollingEmbed(message, diceResultCallback, input);
 
         } catch (error) {
             console.error('❌ サイコロエラー:', error);
             await message.reply(`❌ エラーが発生しました: ${error.message}`);
-            return;
         }
     } else {
-        await message.reply('❌ 無効なダイスの書式です。例: `2d6`');
+        await message.reply('❌ 無効なダイスの書式です。例: `2d6`, `dd20`, `1d100+10`');
     }
 }

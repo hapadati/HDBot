@@ -50,20 +50,31 @@ function getCustomMessage(fortune) {
     const __filename = new URL(import.meta.url).pathname;
     const __dirname = path.dirname(__filename);  // ディレクトリパスを取得
 
-    // おみくじの種類に応じたファイル名を設定
-    const fortuneDir = path.join(__dirname, 'omikuji'); // ディレクトリのパスを設定
-    const fileName = `${fortune.name}.txt`;
-    const filePath = path.join(fortuneDir, fileName);
+    // おみくじファイルが格納されている親ディレクトリのパス
+    const fortuneDir = path.join(__dirname, 'omikuji', fortune.name);
 
-    // ファイルが存在する場合はメッセージを読み込み、存在しない場合はデフォルトメッセージを設定
-    let messages = ['運命に身を任せてみよう！'];
+    // 1つの関数でファイルをランダムに選ぶ処理
+    const getRandomMessageFromFiles = (dirPath) => {
+        // 指定されたディレクトリ内の全ての .txt ファイルを取得
+        const files = fs.readdirSync(dirPath).filter(file => file.endsWith('.txt'));
 
-    if (fs.existsSync(filePath)) {
+        if (files.length === 0) {
+            return { text: '運命に身を任せてみよう！', index: 1, total: 1 };
+        }
+
+        // ランダムにファイルを選択
+        const randomFile = files[Math.floor(Math.random() * files.length)];
+        const filePath = path.join(dirPath, randomFile);
+
+        // ファイルの内容を読み込んでメッセージを設定
         const fileContent = fs.readFileSync(filePath, 'utf-8');
-        messages = fileContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-    }
+        const messages = fileContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
 
-    // ランダムにメッセージを選択
-    const index = Math.floor(Math.random() * messages.length);
-    return { text: messages[index], index: index + 1, total: messages.length };
+        // ランダムにメッセージを選択
+        const index = Math.floor(Math.random() * messages.length);
+        return { text: messages[index], index: index + 1, total: messages.length };
+    };
+
+    // 越吉、超吉、大大吉などの運勢は、それぞれのディレクトリ内でランダムにファイルを選ぶ
+    return getRandomMessageFromFiles(fortuneDir);
 }
