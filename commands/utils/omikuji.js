@@ -46,35 +46,36 @@ function getRandomFortune() {
 
 // 運勢に応じたメッセージを取得
 function getCustomMessage(fortune) {
-    // import.meta.url を使って現在のファイルのパスを取得
     const __filename = new URL(import.meta.url).pathname;
-    const __dirname = path.dirname(__filename);  // ディレクトリパスを取得
-
-    // おみくじファイルが格納されている親ディレクトリのパス
+    const __dirname = path.dirname(__filename);
     const fortuneDir = path.join(__dirname, 'omikuji', fortune.name);
 
-    // 1つの関数でファイルをランダムに選ぶ処理
     const getRandomMessageFromFiles = (dirPath) => {
-        // 指定されたディレクトリ内の全ての .txt ファイルを取得
-        const files = fs.readdirSync(dirPath).filter(file => file.endsWith('.txt'));
+        const files = fs.readdirSync(dirPath)
+            .filter(file => file.endsWith('.txt'))
+            .sort((a, b) => {
+                const numA = parseInt(path.basename(a, '.txt'), 10);
+                const numB = parseInt(path.basename(b, '.txt'), 10);
+                return numA - numB;
+            });
 
         if (files.length === 0) {
             return { text: '運命に身を任せてみよう！', index: 1, total: 1 };
         }
 
-        // ランダムにファイルを選択
-        const randomFile = files[Math.floor(Math.random() * files.length)];
+        const randomIndex = Math.floor(Math.random() * files.length);
+        const randomFile = files[randomIndex];
         const filePath = path.join(dirPath, randomFile);
+        const fileContent = fs.readFileSync(filePath, 'utf-8').trim();
 
-        // ファイルの内容を読み込んでメッセージを設定
-        const fileContent = fs.readFileSync(filePath, 'utf-8');
-        const messages = fileContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+        const fileNumber = parseInt(path.basename(randomFile, '.txt'), 10);
 
-        // ランダムにメッセージを選択
-        const index = Math.floor(Math.random() * messages.length);
-        return { text: messages[index], index: index + 1, total: messages.length };
+        return {
+            text: fileContent,
+            index: fileNumber,
+            total: files.length
+        };
     };
 
-    // 越吉、超吉、大大吉などの運勢は、それぞれのディレクトリ内でランダムにファイルを選ぶ
     return getRandomMessageFromFiles(fortuneDir);
 }
