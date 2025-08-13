@@ -5,6 +5,7 @@ import { data as omikujiCommand, execute as omikujiExecute } from './commands/ut
 import { pingCommand } from './commands/utils/ping.js'; // pingコマンドをインポート
 import { handleMessageRoll } from './commands/utils/dirdice.js'; // dirdice.js からサイコロの処理をインポート
 import { mentionCommand } from './commands/utils/mention.js'; // mentionコマンドをインポート
+import { data as geoquizCommand, execute as geoquizExecute } from './commands/utils/geoquiz.js'; // geoquiz コマンドをインポート
 
 // .env ファイルの読み込み
 dotenv.config();
@@ -28,6 +29,7 @@ const commands = [
     },
     omikujiCommand,  // おみくじコマンドを追加
     mentionCommand,  // mentionコマンドを追加
+    geoquizCommand,  // geoquizコマンドを追加
 ];
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -68,6 +70,9 @@ client.on('interactionCreate', async (interaction) => {
     } else if (commandName === 'mention') {
         // mention コマンドの処理
         await mentionCommand.execute(interaction); // ここで mentionCommand を実行
+    } else if (commandName === 'geoquiz') {
+        // geoquiz コマンドの実行
+        await geoquizExecute(interaction); // geoquiz の処理（実装済み）
     }
 });
 
