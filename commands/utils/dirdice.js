@@ -27,32 +27,42 @@ export function rollNormalDice(dice) {
 
 // dd形式ダイスの判定処理
 export function handleDdDice(dice, rolls, modifier = 0) {
-    let target = parseInt(dice.slice(2));
-    target = eval(`${target} ${modifier >= 0 ? '+' : ''}${modifier}`);
+    try {
+        let target = parseInt(dice.slice(2));
+        if (isNaN(target)) throw new Error('ターゲット値が無効です'); // エラーチェック
 
-    const randomRoll = Math.floor(Math.random() * 100) + 1;
-    let resultMessage = '';
-    let embedColor = 0x000000;
+        target = eval(`${target} ${modifier >= 0 ? '+' : ''}${modifier}`);
 
-    if (randomRoll <= target) {
-        if (randomRoll <= 5) {
-            resultMessage = `圧倒的成功！出目: ${randomRoll} / 目標: ${target}`;
-            embedColor = 0x00ff00;
+        const randomRoll = Math.floor(Math.random() * 100) + 1;
+        let resultMessage = '';
+        let embedColor = 0x000000;
+
+        if (randomRoll <= target) {
+            if (randomRoll <= 5) {
+                resultMessage = `圧倒的成功！出目: ${randomRoll} / 目標: ${target}`;
+                embedColor = 0x00ff00;
+            } else {
+                resultMessage = `成功！出目: ${randomRoll} / 目標: ${target}`;
+                embedColor = 0x0077ff;
+            }
         } else {
-            resultMessage = `成功！出目: ${randomRoll} / 目標: ${target}`;
-            embedColor = 0x0077ff;
+            if (randomRoll >= 96) {
+                resultMessage = `圧倒的失敗！出目: ${randomRoll} / 目標: ${target}`;
+                embedColor = 0xff0000;
+            } else {
+                resultMessage = `失敗！出目: ${randomRoll} / 目標: ${target}`;
+                embedColor = 0xff0000;
+            }
         }
-    } else {
-        if (randomRoll >= 96) {
-            resultMessage = `圧倒的失敗！出目: ${randomRoll} / 目標: ${target}`;
-            embedColor = 0xff0000;
-        } else {
-            resultMessage = `失敗！出目: ${randomRoll} / 目標: ${target}`;
-            embedColor = 0xff0000;
-        }
+
+        return { resultMessage, embedColor };
+
+    } catch (error) {
+        console.error('❌ ddダイスエラー:', error); // エラーログ
+        return { resultMessage: `❌ エラー: ${error.message}`, embedColor: 0xff0000 }; // エラーメッセージ
     }
-    return { resultMessage, embedColor };
 }
+
 
 // 通常のダイスの処理
 export function handleNormalDice(dice, rolls, modifier = 0) {
@@ -112,17 +122,146 @@ export function getSettaiGyakutaiResult(diceType) {
     return { resultMessage, embedColor };
 }
 
-// ダイス式のパース関数（+ - * / 対応）
-function parseDiceExpression(dice) {
-    const match = dice.match(/^(\d*d\d+|dd\d+)([+\-*/]\d+)?$/);
-    if (!match) return null;
+// ddX形式ダイスの判定処理 (追加)
+export function handleDdXDice(dice) {
+    const target = parseInt(dice.slice(2)); // ddXのXを取得
+    const randomRoll = Math.floor(Math.random() * 100) + 1;
+    let resultMessage = '';
+    let embedColor = 0x000000;
 
-    const baseDice = match[1];
-    const modifierStr = match[2] || '';
-    const modifier = modifierStr ? Number(eval(modifierStr)) : 0;
-
-    return { baseDice, modifier };
+    if (randomRoll <= target) {
+        if (randomRoll <= 5) {
+            resultMessage = `圧倒的成功！出目: ${randomRoll} / 目標: ${target}`;
+            embedColor = 0x00ff00;
+        } else {
+            resultMessage = `成功！出目: ${randomRoll} / 目標: ${target}`;
+            embedColor = 0x0077ff;
+        }
+    } else {
+        if (randomRoll >= 96) {
+            resultMessage = `圧倒的失敗！出目: ${randomRoll} / 目標: ${target}`;
+            embedColor = 0xff0000;
+        } else {
+            resultMessage = `失敗！出目: ${randomRoll} / 目標: ${target}`;
+            embedColor = 0xff0000;
+        }
+    }
+    return { resultMessage, embedColor };
 }
+
+// バラバラダイスの処理（XbY形式）
+export function rollBaraBaraDice(counts) {
+    const rolls = [];
+    for (const [sides, count] of counts) {
+        for (let i = 0; i < count; i++) {
+            rolls.push(Math.floor(Math.random() * sides) + 1);
+        }
+    }
+    return rolls;
+}
+
+// バラバラダイスの成功数判定
+export function handleBaraBaraSuccess(rolls, successValue) {
+    const successCount = rolls.filter(roll => roll <= successValue).length;
+    return successCount;
+}
+
+// バラバラダイスの出目結果と成功数を含むメッセージ
+export function handleBaraBaraDice(diceString, rolls, successValue) {
+    const rollResults = rolls.join(', ');  // 出目のリスト
+    let resultMessage = `出目: ${rollResults}`;
+
+    if (successValue !== undefined) {
+        const successCount = handleBaraBaraSuccess(rolls, successValue);
+        resultMessage += ` --> 成功数: ${successCount}`;
+    }
+
+    return resultMessage;
+}
+
+// エモクロアダイス (XdmY形式)
+export function rollEmocroaDice(count, successValue) {
+    const rolls = [];
+    let successCount = 0;
+
+    for (let i = 0; i < count; i++) {
+        const roll = Math.floor(Math.random() * 10) + 1;  // 10面ダイスを振る
+        rolls.push(roll);
+
+        // クリティカル/エラーダイスの処理
+        if (roll === 1) {
+            successCount += 2;  // 1は成功数+2
+        } else if (roll === 10) {
+            successCount -= 1;  // 10は成功数-1
+        } else if (roll <= successValue) {
+            successCount += 1;  // 成功値以下の出目は成功数+1
+        }
+    }
+
+    return { rolls, successCount };
+}
+
+// エモクロアダイスの結果を含むメッセージ
+export function handleEmocroaDice(diceString, rolls, successCount) {
+    const rollResults = rolls.join(', ');  // 出目のリスト
+    let resultMessage = `出目: ${rollResults} --> 成功数: ${successCount}`;
+    return resultMessage;
+}
+
+// ダイス式のパース関数（エモクロアダイス対応）
+function parseEmocroaExpression(dice) {
+    try {
+        const match = dice.match(/^(\d+)dm(\d+)$/);  // XdmY形式に対応
+        if (!match) throw new Error('無効なエモクロアダイスの書式です'); // エラーチェック
+
+        const count = parseInt(match[1]);
+        const successValue = parseInt(match[2]);
+
+        return { count, successValue };
+
+    } catch (error) {
+        console.error('❌ エモクロアダイスのパースエラー:', error); // エラーログ
+        return null; // 無効な入力は null を返す
+    }
+}
+
+
+// バラバラダイスのパース関数（XbY形式）
+function parseBaraBaraExpression(dice) {
+    try {
+        const match = dice.match(/^(\d+)b(\d+)(?:\s+(\d+))?$/);  // XbY (Z)形式
+        if (!match) throw new Error('無効なバラバラダイスの書式です'); // エラーチェック
+
+        const counts = [
+            [parseInt(match[2]), parseInt(match[1])]
+        ];
+
+        const successValue = match[3] ? parseInt(match[3]) : undefined;
+        return { counts, successValue };
+
+    } catch (error) {
+        console.error('❌ バラバラダイスのパースエラー:', error); // エラーログ
+        return null; // 無効な入力は null を返す
+    }
+}
+
+
+// ddX形式のパース関数（追加）
+function parseDdExpression(dice) {
+    try {
+        const match = dice.match(/^dd(\d+)$/);  // ddX形式に対応
+        if (!match) throw new Error('無効なddX形式です'); // エラーチェック
+
+        const target = parseInt(match[1]);
+        if (isNaN(target)) throw new Error('ddXターゲットが無効です'); // エラーチェック
+        return { target };
+
+    } catch (error) {
+        console.error('❌ ddX形式のパースエラー:', error); // エラーログ
+        return null; // 無効な入力は null を返す
+    }
+}
+
 
 // ダイスアニメーションの表示関数
 async function showRollingEmbed(message, diceResultCallback, originalDiceText) {
@@ -156,46 +295,76 @@ async function showRollingEmbed(message, diceResultCallback, originalDiceText) {
 
 // ダイスコマンドのメイン処理
 export async function handleMessageRoll(message) {
-    const input = message.content.trim();
-    let rolls = [];
-    let resultMessage = '';
-    let embedColor = 0x000000;
+    try {
+        const input = message.content.trim();
+        let rolls = [];
+        let resultMessage = '';
+        let embedColor = 0x000000;
 
-    if (input === 'settai' || input === 'gyakutai') {
-        const { resultMessage: specialResult, embedColor: specialColor } = getSettaiGyakutaiResult(input);
-        resultMessage = specialResult;
-        embedColor = specialColor;
-        await message.reply({ embeds: [new EmbedBuilder().setDescription(resultMessage).setColor(embedColor)] });
-        return;
-    }
+        // 接待/虐待ダイスの処理
+        if (input === 'settai' || input === 'gyakutai') {
+            const { resultMessage: specialResult, embedColor: specialColor } = getSettaiGyakutaiResult(input);
+            resultMessage = specialResult;
+            embedColor = specialColor;
+            await message.reply({ embeds: [new EmbedBuilder().setDescription(resultMessage).setColor(embedColor)] });
+            return;
+        }
 
-    const parsed = parseDiceExpression(input);
-    if (!parsed) {
-        await message.reply('❌ 無効なダイスの書式です。例: `2d6`, `1d100+10`, `dd20-5`');
-        return;
-    }
-
-    const { baseDice, modifier } = parsed;
-
-    if (/^(\d*d\d+|dd\d+)$/.test(baseDice)) {
-        try {
-            rolls = rollNormalDice(baseDice);
+        // エモクロアダイス (XdmY形式) の処理
+        const parsedEmocroa = parseEmocroaExpression(input);
+        if (parsedEmocroa) {
+            const { count, successValue } = parsedEmocroa;
+            const { rolls, successCount } = rollEmocroaDice(count, successValue);
 
             const diceResultCallback = async () => {
-                if (baseDice.startsWith('dd')) {
-                    return handleDdDice(baseDice, rolls, modifier);
-                } else {
-                    return handleNormalDice(baseDice, rolls, modifier);
-                }
+                return { resultMessage: handleEmocroaDice(input, rolls, successCount), embedColor: 0x0000ff };
             };
 
             await showRollingEmbed(message, diceResultCallback, input);
-
-        } catch (error) {
-            console.error('❌ サイコロエラー:', error);
-            await message.reply(`❌ エラーが発生しました: ${error.message}`);
+            return;
         }
-    } else {
-        await message.reply('❌ 無効なダイスの書式です。例: `2d6`, `dd20`, `1d100+10`');
+
+        // バラバラダイス (XbY形式) の処理
+        const parsedBaraBara = parseBaraBaraExpression(input);
+        if (parsedBaraBara) {
+            const { counts, successValue } = parsedBaraBara;
+            const rolls = rollBaraBaraDice(counts);
+            const resultMessage = handleBaraBaraDice(input, rolls, successValue);
+
+            await message.reply({ embeds: [new EmbedBuilder().setDescription(resultMessage).setColor(0x0000ff)] });
+            return;
+        }
+
+        // ddX形式の処理（追加）
+        const parsedDd = parseDdExpression(input);
+        if (parsedDd) {
+            const { target } = parsedDd;
+
+            const diceResultCallback = async () => {
+                const { resultMessage, embedColor } = handleDdXDice(input);
+                return { resultMessage, embedColor };
+            };
+
+            await showRollingEmbed(message, diceResultCallback, input);
+            return;
+        }
+
+        // 通常のd形式ダイスの処理（追加）
+        const parsedNormal = parseNormalDiceExpression(input);
+        if (parsedNormal) {
+            const { count, sides, modifier } = parsedNormal;
+            const rolls = rollNormalDice(count, sides);
+            const resultMessage = handleNormalDice(input, rolls, modifier);
+
+            await message.reply({ embeds: [new EmbedBuilder().setDescription(resultMessage).setColor(0x0000ff)] });
+            return;
+        }
+
+        // 入力が無効な場合のエラーハンドリング
+        throw new Error('無効なダイスの書式です。例えば、2d6や1d100+10、dd20などが正しい書式です。');
+
+    } catch (error) {
+        console.error('❌ サイコロ処理エラー:', error); // エラーログ
+        await message.reply({ embeds: [new EmbedBuilder().setDescription(`❌ エラー: ${error.message}`).setColor(0xff0000)] }); // エラーメッセージ
     }
 }
