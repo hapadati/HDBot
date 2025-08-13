@@ -1,5 +1,4 @@
 import pkg from 'discord.js';
-const { SlashCommandBuilder, MessageActionRow, MessageButton } = pkg;
 import axios from 'axios';
 import dotenv from 'dotenv';
 import fs from 'fs';
@@ -7,6 +6,7 @@ import path from 'path';
 
 dotenv.config();
 
+const { SlashCommandBuilder, MessageAttachment, MessageActionRow, MessageButton } = pkg;
 const ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
 
 // 都道府県と観光地のクエリデータをJSONから読み込む関数
@@ -78,11 +78,11 @@ export async function execute(interaction) {
     return;
   }
 
-  const imageAttachment = new pkg.MessageAttachment(imageUrl); // 画像URLをAttachmentに変換
+  const imageAttachment = new MessageAttachment(imageUrl); // 画像URLをAttachmentに変換
 
-  const row = new pkg.MessageActionRow().addComponents(
+  const row = new MessageActionRow().addComponents(
     choices.map(choice =>
-      new pkg.MessageButton()
+      new MessageButton()
         .setCustomId(choice)
         .setLabel(choice)
         .setStyle('PRIMARY')
