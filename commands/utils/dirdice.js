@@ -11,6 +11,9 @@ export function rollDice(count, max) {
 
 // dd形式や通常のd形式のダイス処理
 export function rollNormalDice(dice) {
+    // diceが文字列か確認し、文字列でない場合は強制的に文字列に変換
+    dice = dice.toString();
+
     let count, max;
     if (dice.startsWith('dd')) {
         count = 1;
