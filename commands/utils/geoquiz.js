@@ -1,4 +1,5 @@
-import { SlashCommandBuilder, MessageActionRow, MessageButton } from 'discord.js';
+import pkg from 'discord.js';
+const { SlashCommandBuilder, MessageActionRow, MessageButton } = pkg;
 import axios from 'axios';
 import dotenv from 'dotenv';
 import fs from 'fs';
@@ -45,7 +46,7 @@ async function getImage(query) {
         content_filter: 'high',
       },
     });
-    return response.data?.urls?.regular || null;
+    return response.data?.[0]?.urls?.regular || null;
   } catch (error) {
     console.error('画像の取得に失敗しました:', error);
     return null;
@@ -77,9 +78,11 @@ export async function execute(interaction) {
     return;
   }
 
-  const row = new MessageActionRow().addComponents(
+  const imageAttachment = new pkg.MessageAttachment(imageUrl); // 画像URLをAttachmentに変換
+
+  const row = new pkg.MessageActionRow().addComponents(
     choices.map(choice =>
-      new MessageButton()
+      new pkg.MessageButton()
         .setCustomId(choice)
         .setLabel(choice)
         .setStyle('PRIMARY')
@@ -88,11 +91,12 @@ export async function execute(interaction) {
 
   await interaction.reply({
     content: `この写真はどの都道府県でしょうか？`,
-    files: [imageUrl],
+    files: [imageAttachment], // 画像をAttachmentとして送信
     components: [row],
   });
 
-  const filter = i => i.isButton();
+  const filter = i => i.isButton() && i.user.id === interaction.user.id; // ボタンを押したユーザーをチェック
+
   const collector = interaction.channel.createMessageComponentCollector({ filter, time: 15000 });
 
   collector.on('collect', async (buttonInteraction) => {
@@ -100,6 +104,15 @@ export async function execute(interaction) {
       await buttonInteraction.reply({ content: '正解です！🎉', ephemeral: true });
     } else {
       await buttonInteraction.reply({ content: `残念！正解は ${correct} でした。`, ephemeral: true });
+    }
+  });
+
+  collector.on('end', async () => {
+    if (!collector.collected.size) {
+      await interaction.followUp({
+        content: '時間切れです！正解は ' + correct + ' でした。',
+        ephemeral: true,
+      });
     }
   });
 }
