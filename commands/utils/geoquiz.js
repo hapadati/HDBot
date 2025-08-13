@@ -11,17 +11,21 @@ const ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
 
 // 都道府県と観光地のクエリデータをJSONから読み込む関数
 function loadPlaceQueries() {
-  // __dirnameの代わりにimport.meta.urlを使用してファイルパスを取得
-  const filePath = path.join(
-    path.dirname(new URL(import.meta.url).pathname), // モジュールのディレクトリを取得
-    '..', '..', 'commands', 'utils', 'geoquiz', 'places.json' // 相対パスでplaces.jsonにアクセス
-  );
-
-  // ファイルを読み込み
-  const data = fs.readFileSync(filePath, 'utf-8');
-  return JSON.parse(data);
+  // 現在のファイル（geoquiz.js）のディレクトリパスを取得
+  const currentDir = path.dirname(new URL(import.meta.url).pathname);
+  
+  // 'commands/utils/geoquiz/place.json' への相対パスを組み立て
+  const filePath = path.join(currentDir, '..', '..', 'geoquiz', 'place.json');
+  
+  try {
+    // JSONファイルの読み込み
+    const data = fs.readFileSync(filePath, 'utf-8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('ファイルの読み込みに失敗しました:', error);
+    return null;
+  }
 }
-
 const placeQueries = loadPlaceQueries();
 
 // 都道府県一覧（placeQueriesのキーを利用）
