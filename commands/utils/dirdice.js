@@ -64,16 +64,21 @@ export function handleDdDice(dice, rolls, modifier = 0) {
 }
 
 
-// 通常のダイスの処理
-export function handleNormalDice(dice, rolls, modifier = 0) {
+// 通常ダイスの処理
+export function handleNormalDice(dice, rolls, modifier = 0, isMultiply = 1) {
     const total = rolls.reduce((a, b) => a + b, 0);
-    const modifiedTotal = eval(`${total} ${modifier >= 0 ? '+' : ''}${modifier}`);
-    const resultDescription = rolls.join(', ') + ` (合計: ${total}${modifier ? ` → 修正後: ${modifiedTotal}` : ''})`;
+    const modifiedTotal = total + modifier; // 修正値を合計に反映
+
+    // 掛け算処理（isMultiplyが1以外の場合に適用）
+    const finalTotal = modifiedTotal * isMultiply;
+
+    const resultDescription = rolls.join(', ') + ` (合計: ${total}${modifier ? ` → 修正後: ${modifiedTotal}` : ''}${isMultiply !== 1 ? ` → 掛け算後: ${finalTotal}` : ''})`;
+
     let resultMessage = `出目: ${resultDescription}`;
     let embedColor = 0x000000;
 
     if (dice === '1d100') {
-        const roll = modifiedTotal;
+        const roll = finalTotal;
         if (roll === 1) {
             resultMessage += ' (1クリティカル！)';
             embedColor = 0x00ff00;
@@ -292,8 +297,27 @@ async function showRollingEmbed(message, diceResultCallback, originalDiceText) {
 
     await rollingMessage.edit({ embeds: [finalEmbed] });
 }
+// 通常のダイス式のパース関数（修正後）
+function parseNormalDiceExpression(dice) {
+    try {
+        // 例えば 2d6*3 などの書式に対応
+        const match = dice.match(/^(\d+)d(\d+)([+-]?\d+)?(\*[\d]+)?$/); // 掛け算（*）に対応
+        if (!match) throw new Error('無効なダイスの書式です'); // エラーチェック
 
-// ダイスコマンドのメイン処理
+        const count = parseInt(match[1]);
+        const sides = parseInt(match[2]);
+        const modifier = match[3] ? parseInt(match[3]) : 0; // 修正値があればそれを使う
+        const isMultiply = match[4] ? parseInt(match[4].slice(1)) : 1; // *があれば掛け算
+
+        return { count, sides, modifier, isMultiply };
+
+    } catch (error) {
+        console.error('❌ 通常ダイスのパースエラー:', error); // エラーログ
+        return null; // 無効な入力は null を返す
+    }
+}
+
+
 export async function handleMessageRoll(message) {
     try {
         const input = message.content.trim();
@@ -349,14 +373,14 @@ export async function handleMessageRoll(message) {
             return;
         }
 
-        // 通常のd形式ダイスの処理（追加）
+        // 通常のダイス処理
         const parsedNormal = parseNormalDiceExpression(input);
         if (parsedNormal) {
-            const { count, sides, modifier } = parsedNormal;
+            const { count, sides, modifier, isMultiply } = parsedNormal;
             const rolls = rollNormalDice(count, sides);
-            const resultMessage = handleNormalDice(input, rolls, modifier);
+            const result = handleNormalDice(input, rolls, modifier, isMultiply);
 
-            await message.reply({ embeds: [new EmbedBuilder().setDescription(resultMessage).setColor(0x0000ff)] });
+            await message.reply({ embeds: [new EmbedBuilder().setDescription(result.resultMessage).setColor(result.embedColor)] });
             return;
         }
 
