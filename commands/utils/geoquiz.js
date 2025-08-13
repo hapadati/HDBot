@@ -1,4 +1,5 @@
 import pkg from 'discord.js';
+const { SlashCommandBuilder, MessageActionRow, MessageButton, MessageAttachment } = pkg;
 import axios from 'axios';
 import dotenv from 'dotenv';
 import fs from 'fs';
@@ -6,12 +7,12 @@ import path from 'path';
 
 dotenv.config();
 
-const { SlashCommandBuilder, MessageAttachment, MessageActionRow, MessageButton } = pkg;
 const ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
 
 // 都道府県と観光地のクエリデータをJSONから読み込む関数
 function loadPlaceQueries() {
-  const filePath = path.join(__dirname, '..', '..', 'geoquiz', 'places.json');
+  // __dirnameの代わりにimport.meta.urlを使用してファイルパスを取得
+  const filePath = path.join(new URL(import.meta.url).pathname, '..', '..', 'geoquiz', 'places.json');
   const data = fs.readFileSync(filePath, 'utf-8');
   return JSON.parse(data);
 }
