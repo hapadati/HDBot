@@ -118,13 +118,15 @@ process.on('SIGINT', () => {
 console.log('🔑 Discord Token (最初の5文字だけ表示):', process.env.DISCORD_TOKEN?.slice(0, 5));
 
 client.login(process.env.DISCORD_TOKEN)
-    .then(() => {
-        console.log("✅ Discord にログイン成功しました！");
-    })
-    .catch(error => {
-        console.error('❌ Discord にログイン失敗:', error);
-        process.exit(1);
-    });
+  .catch(error => {
+    console.error('❌ Discord にログイン失敗:', error);
+    process.exit(1);
+  });
+
+client.once('ready', () => {
+  console.log(`✅ Discord にログイン成功しました！`);
+  console.log(`🎉 ${client.user.tag} が正常に起動しました！`);
+});
 
 
 // Express Webサーバーの設定（Render用）
