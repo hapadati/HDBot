@@ -129,6 +129,7 @@ client.once('ready', () => {
 });
 
 
+
 // Express Webサーバーの設定（Render用）
 const app = express();
 const port = process.env.PORT || 10000;
@@ -143,4 +144,5 @@ app.get('/', (req, res) => {
 
 app.listen(port, () => {
     console.log(`🌐 Web サーバーがポート ${port} で起動しました`);
+    console.log('DISCORD_TOKEN length:', process.env.DISCORD_TOKEN?.length);
 });
