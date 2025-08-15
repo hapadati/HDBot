@@ -46,11 +46,21 @@ function getRandomFortune() {
 
 // 運勢に応じたメッセージを取得
 function getCustomMessage(fortune) {
-    const __filename = new URL(import.meta.url).pathname;
+    // Windows 対応の __dirname 取得処理
+    const rawPath = decodeURIComponent(new URL(import.meta.url).pathname);
+    const __filename = process.platform === 'win32' && rawPath.startsWith('/')
+        ? rawPath.slice(1)
+        : rawPath;
     const __dirname = path.dirname(__filename);
+
     const fortuneDir = path.join(__dirname, 'omikuji', fortune.name);
 
     const getRandomMessageFromFiles = (dirPath) => {
+        if (!fs.existsSync(dirPath)) {
+            console.warn(`❗️ フォルダが存在しません: ${dirPath}`);
+            return { text: '運命に身を任せてみよう！', index: 1, total: 1 };
+        }
+
         const files = fs.readdirSync(dirPath)
             .filter(file => file.endsWith('.txt'))
             .sort((a, b) => {

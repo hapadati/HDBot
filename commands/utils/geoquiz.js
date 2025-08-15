@@ -1,5 +1,11 @@
-import pkg from 'discord.js';
-const { SlashCommandBuilder, MessageActionRow, MessageButton, MessageAttachment } = pkg;
+import { 
+  SlashCommandBuilder, 
+  ActionRowBuilder, 
+  ButtonBuilder, 
+  AttachmentBuilder,
+  ButtonStyle,
+  EmbedBuilder
+} from 'discord.js';
 import axios from 'axios';
 import dotenv from 'dotenv';
 
@@ -322,73 +328,73 @@ async function getImage(query) {
         content_filter: 'high',
       },
     });
-    return response.data?.[0]?.urls?.regular || null;
+    console.log('Unsplash API response:', response.data);
+    return response.data?.urls?.regular || null;
   } catch (error) {
-    console.error('画像の取得に失敗しました:', error);
+    console.error('画像の取得に失敗しました:', error.response?.data || error.message);
     return null;
   }
 }
+
 
 export const data = new SlashCommandBuilder()
   .setName('geoquiz')
   .setDescription('日本の都道府県を当てるクイズ！');
 
-export async function execute(interaction) {
-  // 正解の都道府県
-  const correct = getRandomPrefecture();
-
-  // 正解の観光地クエリをランダムに選ぶ
-  const randomIndex = Math.floor(Math.random() * placeQueries[correct].length);
-  const imageQuery = placeQueries[correct][randomIndex];
-
-  // 不正解の選択肢（ランダムで2つ）
-  const incorrect = PREFECTURES.filter(p => p !== correct);
-  shuffleArray(incorrect);
-  const choices = shuffleArray([correct, incorrect[0], incorrect[1]]); // 正解＋ランダム2つをシャッフル
-
-  // 画像取得
-  const imageUrl = await getImage(imageQuery);
-
-  if (!imageUrl) {
-    await interaction.reply('画像の取得に失敗しました。');
-    return;
-  }
-
-  const imageAttachment = new MessageAttachment(imageUrl); // 画像URLをAttachmentに変換
-
-  const row = new MessageActionRow().addComponents(
-    choices.map(choice =>
-      new MessageButton()
-        .setCustomId(choice)
-        .setLabel(choice)
-        .setStyle('PRIMARY')
-    )
-  );
-
-  await interaction.reply({
-    content: `この写真はどの都道府県でしょうか？`,
-    files: [imageAttachment], // 画像をAttachmentとして送信
-    components: [row],
-  });
-
-  const filter = i => i.isButton() && i.user.id === interaction.user.id; // ボタンを押したユーザーをチェック
-
-  const collector = interaction.channel.createMessageComponentCollector({ filter, time: 15000 });
-
-  collector.on('collect', async (buttonInteraction) => {
-    if (buttonInteraction.customId === correct) {
-      await buttonInteraction.reply({ content: '正解です！🎉', ephemeral: true });
-    } else {
-      await buttonInteraction.reply({ content: `残念！正解は ${correct} でした。`, ephemeral: true });
-    }
-  });
-
-  collector.on('end', async () => {
-    if (!collector.collected.size) {
-      await interaction.followUp({
-        content: '時間切れです！正解は ' + correct + ' でした。',
-        ephemeral: true,
-      });
-    }
-  });
+  export async function execute(interaction) {
+    // ✅ 最初に deferReply() を必ず入れる（3秒以内の応答を保証）
+    await interaction.deferReply();
+  
+// 正解をランダムに選ぶ
+const correct = getRandomPrefecture();
+const randomIndex = Math.floor(Math.random() * placeQueries[correct].length);
+const imageQuery = placeQueries[correct][randomIndex];
+// 画像を取得
+const imageUrl = await getImage(imageQuery);
+if (!imageUrl) {
+  await interaction.editReply('画像の取得に失敗しました。');
+  return;
 }
+
+// ✅ Embed形式で画像を表示
+const embed = new EmbedBuilder()
+  .setTitle('この写真はどの都道府県でしょうか？')
+  .setImage(imageUrl)
+  .setColor(0x00AE86); // 好きな色でOK
+
+// ✅ ボタン作成
+const choices = shuffleArray([correct, ...PREFECTURES.filter(p => p !== correct).slice(0, 2)]);
+const row = new ActionRowBuilder().addComponents(
+  choices.map(choice =>
+    new ButtonBuilder()
+      .setCustomId(choice)
+      .setLabel(choice)
+      .setStyle(ButtonStyle.Primary)
+  )
+);
+
+await interaction.editReply({
+  content: 'この写真はどの都道府県でしょうか？',
+  embeds: [embed],
+  components: [row],
+});
+
+    // ✅ コレクターはそのままで OK
+    const filter = i => i.isButton() && i.user.id === interaction.user.id;
+    const collector = interaction.channel.createMessageComponentCollector({ filter });
+
+    collector.on('collect', async (buttonInteraction) => {
+      if (buttonInteraction.customId === correct) {
+        await buttonInteraction.reply({ content: '正解です！🎉' });
+      } else {
+        await buttonInteraction.reply({ content: `残念！正解は ${correct} でした。` });
+      }
+    
+      // ボタンを削除
+      await interaction.editReply({
+        components: []
+      });
+    
+      collector.stop(); // 回答後はコレクターを停止（任意）
+    });    
+  }
