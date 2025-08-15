@@ -50,11 +50,6 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     }
 })();
 
-// Botが起動完了したときの処理
-client.once('ready', async () => {
-    console.log(`🎉 ${client.user.tag} が正常に起動しました！`);
-});
-
 // スラッシュコマンドの処理
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isCommand()) return;
@@ -107,6 +102,11 @@ client.on('error', (error) => {
     console.error('❌ Discord クライアントエラー:', error);
 });
 
+if (!process.env.DISCORD_TOKEN) {
+    console.error('❌ DISCORD_TOKEN が .env ファイルに設定されていません！');
+    process.exit(1);
+}
+
 // プロセス終了時の処理
 process.on('SIGINT', () => {
     console.log('🛑 Botを終了しています...');
@@ -126,8 +126,8 @@ client.login(process.env.DISCORD_TOKEN)
 client.once('ready', () => {
   console.log(`✅ Discord にログイン成功しました！`);
   console.log(`🎉 ${client.user.tag} が正常に起動しました！`);
+  console.log(`📊 ${client.guilds.cache.size} つのサーバーに参加中`);
 });
-
 
 
 // Express Webサーバーの設定（Render用）
@@ -144,5 +144,4 @@ app.get('/', (req, res) => {
 
 app.listen(port, () => {
     console.log(`🌐 Web サーバーがポート ${port} で起動しました`);
-    console.log('DISCORD_TOKEN length:', process.env.DISCORD_TOKEN?.length);
 });
