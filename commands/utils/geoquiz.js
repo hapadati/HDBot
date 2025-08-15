@@ -363,7 +363,8 @@ const embed = new EmbedBuilder()
   .setColor(0x00AE86); // 好きな色でOK
 
 // ✅ ボタン作成
-const choices = shuffleArray([correct, ...PREFECTURES.filter(p => p !== correct).slice(0, 2)]);
+const otherChoices = shuffleArray(PREFECTURES.filter(p => p !== correct)).slice(0, 2);
+const choices = shuffleArray([correct, ...otherChoices]);
 const row = new ActionRowBuilder().addComponents(
   choices.map(choice =>
     new ButtonBuilder()
