@@ -6,7 +6,7 @@ import { pingCommand } from './commands/utils/ping.js';
 import { handleMessageRoll } from './commands/utils/dirdice.js'; 
 import { mentionCommand } from './commands/utils/mention.js'; 
 import { data as geoquizCommand, execute as geoquizExecute } from './commands/utils/geoquiz.js'; 
-import recruitmentCommand from './commands/manage/button.js';
+const recruitmentCommand = (await import('./commands/manage/button.js')).default;
 const alldeleteCommand = require('./commands/manage/alldelete.js');  // 修正: require に変更
 const banCommand = require ('./commands/manage/ban.js');  // 名前付きエクスポートを使用
 const kickCommand = require ('./commands/manage/kick.js'); 
