@@ -6,6 +6,13 @@ import { pingCommand } from './commands/utils/ping.js'; // pingコマンドを�
 import { handleMessageRoll } from './commands/utils/dirdice.js'; // dirdice.js からサイコロの処理をインポート
 import { mentionCommand } from './commands/utils/mention.js'; // mentionコマンドをインポート
 import { data as geoquizCommand, execute as geoquizExecute } from './commands/utils/geoquiz.js'; // geoquiz コマンドをインポート
+import { data as recruitmentCommand } from './commands/manage/button.js';
+import { data as alldeleteCommand } from './commands/manage/alldelete.js';  // alldelete.jsからalldeleteコマンドをインポート
+import { data as banCommand } from './commands/manage/ban.js';  // ban.js から ban コマンドをインポート
+import { data as kickCommand } from './commands/manage/kick.js';  // kick.js から kick コマンドをインポート
+import { execute as messageExecute } from './commands/manage/message.js';  // message.js の実行部分をインポート
+import { data as roleCommand } from './commands/manage/role.js';  // role.js から role コマンドをインポート
+import { data as softbanCommand } from './commands/manage/softban.js';  // softban.js から softban コマンドをインポート
 
 // .env ファイルの読み込み
 dotenv.config();
@@ -30,6 +37,13 @@ const commands = [
     omikujiCommand,  // おみくじコマンドを追加
     mentionCommand,  // mentionコマンドを追加
     geoquizCommand,  // geoquizコマンドを追加
+    recruitmentCommand,  // 募集コマンドを追加（button.js）
+    alldeleteCommand,  // alldeleteコマンドを追加
+    banCommand,  // banコマンドを追加
+    kickCommand,  // kickコマンドを追加
+    messageExecute,  // message.js コマンドを追加
+    roleCommand,  // roleコマンドを追加
+    softbanCommand,  // softbanコマンドを追加
 ];
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -68,6 +82,20 @@ client.on('interactionCreate', async (interaction) => {
     } else if (commandName === 'geoquiz') {
         // geoquiz コマンドの実行
         await geoquizExecute(interaction); // geoquiz の処理（実装済み）
+    } else if (commandName === 'recruitment') {  // recruitmentコマンドの処理
+        await recruitmentCommand.execute(interaction);  // recruitmentCommandのexecuteメソッドを呼び出す
+    } else if (commandName === 'alldelete') {  // alldeleteコマンドの処理
+        await alldeleteCommand.execute(interaction);  // alldeleteCommandのexecuteメソッドを呼び出す
+    } else if (commandName === 'ban') {  // ban コマンドの処理
+        await banCommand.execute(interaction);  // banCommand の execute メソッドを呼び出す
+    } else if (commandName === 'kick') {  // kick コマンドの処理
+        await kickCommand.execute(interaction);  // kickCommand の execute メソッドを呼び出す
+    } else if (commandName === 'message') {  // message コマンドの処理
+        await messageExecute(interaction);  // message.js の execute メソッドを呼び出す
+    } else if (commandName === 'role') {
+        await roleCommand.execute(interaction);  // role.js の execute メソッドを呼び出す
+    } else if (commandName === 'softban') {
+        await softbanCommand.execute(interaction);  // softban.js の execute メソッドを呼び出す
     }
 });
 
@@ -76,7 +104,47 @@ async function handleRollCommand(interaction) {
     const dice = interaction.options.getString('dice');
     await handleMessageRoll(interaction);  // dirdice.js の handleMessageRoll を呼び出す
 }
-
+client.on('messageCreate', async (message) => {
+    if (message.author.bot) return;
+  
+    // メッセージ内にURL（メッセージリンク）が含まれているかチェック
+    const messageLinkRegex = /https:\/\/discord\.com\/channels\/(\d+)\/(\d+)\/(\d+)/g;
+    const matches = message.content.match(messageLinkRegex);
+  
+    if (matches) {
+      for (const match of matches) {
+        const [fullMatch, guildId, channelId, messageId] = match.match(messageLinkRegex);
+  
+        try {
+          // メッセージを取得
+          const channel = await client.channels.fetch(channelId);
+          const targetMessage = await channel.messages.fetch(messageId);
+  
+          // 埋め込みメッセージを作成
+          const embed = new MessageEmbed()
+            .setTitle(`メッセージ内容`)
+            .setDescription(targetMessage.content)
+            .addField('送信者', targetMessage.author.tag, true)
+            .addField('送信日時', targetMessage.createdAt.toLocaleString(), true)
+            .setColor('#00ff00')
+            .setTimestamp(targetMessage.createdAt);
+  
+          // 埋め込みメッセージを送信
+          message.reply({ embeds: [embed] });
+        } catch (error) {
+          if (error.message === 'Unknown Message') {
+            message.reply('指定されたメッセージは削除されたため、表示できませんでした。');
+          } else if (error.message.includes('Missing Access')) {
+            message.reply('指定されたメッセージを取得するための権限がありません。');
+          } else {
+            message.reply('メッセージを取得する際に予期しないエラーが発生しました。');
+            console.error('メッセージ取得エラー:', error);
+          }
+        }
+      }
+    }
+  });
+  
 // メッセージ処理（通常メッセージで「ping」に反応）
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;  // ボットメッセージを無視
