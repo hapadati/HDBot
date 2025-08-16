@@ -1,3 +1,7 @@
+// ban.js
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { PermissionFlagsBits } = require('discord.js');
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('ban')
@@ -9,9 +13,11 @@ module.exports = {
 
   async execute(interaction) {
     const user = interaction.options.getUser('user');
+
     if (!interaction.member.permissions.has(PermissionFlagsBits.BanMembers)) {
       return interaction.reply({ content: 'あなたにはこの操作を行う権限がありません。', ephemeral: true });
     }
+
     try {
       const member = await interaction.guild.members.fetch(user.id);
       if (member && member.bannable) {
