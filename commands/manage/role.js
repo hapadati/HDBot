@@ -1,5 +1,5 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { MessageActionRow, MessageButton, MessageEmbed, PermissionFlagsBits } from 'discord.js';
+import pkg from 'discord.js';  // discord.jsをdefaultインポート
+const { MessageActionRow, MessageButton, EmbedBuilder, PermissionFlagsBits } = pkg;  // 必要なコンポーネントを取り出す
 
 // rolebuttonコマンド
 export const roleCommand = {
@@ -30,7 +30,7 @@ export const roleCommand = {
     const color = interaction.options.getInteger('color');
     
     // 埋め込みメッセージ作成
-    const embed = new MessageEmbed()
+    const embed = new EmbedBuilder()
       .setTitle(role.name)
       .setDescription(`ユーザーのメッセージ: ${message}`)
       .setColor(color)
