@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { PermissionFlagsBits, DiscordAPIError } from 'discord.js';
+import pkg from 'discord.js';
+const { MessageActionRow, MessageButton, MessageEmbed, PermissionFlagsBits, DiscordAPIError } = pkg;
 
 // 時間の単位とそのミリ秒変換を定義
 const timeUnits = {
