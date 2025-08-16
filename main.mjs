@@ -1,12 +1,17 @@
 import { Client, GatewayIntentBits, Routes, REST } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
+
+// CommonJS の形でインポートする修正
+import pkg from 'discord.js';
+const { MessageEmbed, MessageActionRow, MessageButton, PermissionFlagsBits } = pkg;
+
 import { data as omikujiCommand, execute as omikujiExecute } from './commands/utils/omikuji.js'; 
 import { pingCommand } from './commands/utils/ping.js'; 
 import { handleMessageRoll } from './commands/utils/dirdice.js'; 
 import { mentionCommand } from './commands/utils/mention.js'; 
 import { data as geoquizCommand, execute as geoquizExecute } from './commands/utils/geoquiz.js'; 
-import {recruitmentCommand} from './commands/manage/button.js';
+import { recruitmentCommand } from './commands/manage/button.js';
 
 // 他のモジュールもすべて `import` に変更
 import { alldeleteCommand } from './commands/manage/alldelete.js';  
