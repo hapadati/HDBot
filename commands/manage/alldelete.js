@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { PermissionFlagsBits } = require('discord.js');
 
-module.exports = {
+export const alldeleteCommand = {
   data: new SlashCommandBuilder()
     .setName('alldelete')
     .setDescription('指定したユーザーまたはボットのメッセージを削除します')

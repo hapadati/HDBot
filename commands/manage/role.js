@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
 const { PermissionFlagsBits } = require('discord.js');
 
-module.exports = {
+export const roleCommand = {
   data: new SlashCommandBuilder()
     .setName('rolebutton')
     .setDescription('指定したロールを付与/削除するボタンを送信')

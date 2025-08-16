@@ -4,7 +4,7 @@ const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
 // 応募者リスト
 let applicants = [];
 
-module.exports = {
+export const recruitmentCommand = {
   data: new SlashCommandBuilder()
     .setName('recruitment')
     .setDescription('指定したロールを対象に募集を行う')

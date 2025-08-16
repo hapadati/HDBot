@@ -2,7 +2,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { PermissionFlagsBits } = require('discord.js');
 
-module.exports = {
+export const banCommand = {
   data: new SlashCommandBuilder()
     .setName('ban')
     .setDescription('指定したユーザーをサーバーからバンします')

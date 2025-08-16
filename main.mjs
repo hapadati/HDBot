@@ -15,6 +15,7 @@ import { kickCommand } from './commands/manage/kick.js';
 import { messageExecute } from './commands/manage/message.js'; 
 import { roleCommand } from './commands/manage/role.js'; 
 import { softbanCommand } from './commands/manage/softban.js'; 
+import { timeoutCommand } from './commands/manage/timeout.js'; 
 
 dotenv.config();
 
@@ -38,12 +39,13 @@ const commands = [
     mentionCommand,  // 修正後のコマンド追加
     geoquizCommand,  // 修正後のコマンド追加
     recruitmentCommand,  // 修正後のコマンド追加
-    alldeleteCommand.data,
+    alldeleteCommand,
     banCommand,  // 修正後のコマンド追加
     kickCommand,  // 修正後のコマンド追加
     messageExecute,  // 修正後のコマンド追加
     roleCommand,  // 修正後のコマンド追加
     softbanCommand,  // 修正後のコマンド追加
+    timeoutCommand,
 ];
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);

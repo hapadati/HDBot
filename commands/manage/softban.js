@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { PermissionFlagsBits } = require('discord.js');
 
-module.exports = {
+export const softbanCommand = {
   data: new SlashCommandBuilder()
     .setName('softban')
     .setDescription('ユーザーをソフトバンします（メッセージ削除範囲を設定可能）')

@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { PermissionFlagsBits } = require('discord.js');
 
-module.exports = {
+export const kickCommand = {
   data: new SlashCommandBuilder()
     .setName('kick')
     .setDescription('ユーザーをサーバーからキックします')

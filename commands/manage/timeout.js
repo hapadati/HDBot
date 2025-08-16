@@ -11,7 +11,7 @@ const timeUnits = {
   y: 365 * 24 * 60 * 60 * 1000, // 年
 };
 
-module.exports = {
+export const timeoutCommand = {
   data: new SlashCommandBuilder()
     .setName('timeout')
     .setDescription('ユーザーをタイムアウトします')
