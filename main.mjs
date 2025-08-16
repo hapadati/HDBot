@@ -1,30 +1,28 @@
 import { Client, GatewayIntentBits, Routes, REST } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
-import { data as omikujiCommand, execute as omikujiExecute } from './commands/utils/omikuji.js'; // omikuji コマンドをインポート
-import { pingCommand } from './commands/utils/ping.js'; // pingコマンドをインポート
-import { handleMessageRoll } from './commands/utils/dirdice.js'; // dirdice.js からサイコロの処理をインポート
-import { mentionCommand } from './commands/utils/mention.js'; // mentionコマンドをインポート
-import { data as geoquizCommand, execute as geoquizExecute } from './commands/utils/geoquiz.js'; // geoquiz コマンドをインポート
-import { data as recruitmentCommand } from './commands/manage/button.js';
-import { data as alldeleteCommand } from './commands/manage/alldelete.js';  // alldelete.jsからalldeleteコマンドをインポート
-import { data as banCommand } from './commands/manage/ban.js';  // ban.js から ban コマンドをインポート
-import { data as kickCommand } from './commands/manage/kick.js';  // kick.js から kick コマンドをインポート
-import { execute as messageExecute } from './commands/manage/message.js';  // message.js の実行部分をインポート
-import { data as roleCommand } from './commands/manage/role.js';  // role.js から role コマンドをインポート
-import { data as softbanCommand } from './commands/manage/softban.js';  // softban.js から softban コマンドをインポート
+import omikujiCommand from './commands/utils/omikuji.js';  // 修正: デフォルトインポートに変更
+import pingCommand from './commands/utils/ping.js';  // 修正: デフォルトインポートに変更
+import { handleMessageRoll } from './commands/utils/dirdice.js';  // サイコロコマンド
+import mentionCommand from './commands/utils/mention.js';  // 修正: デフォルトインポートに変更
+import geoquizCommand from './commands/utils/geoquiz.js';  // 修正: デフォルトインポートに変更
+import recruitmentCommand from './commands/manage/button.js';  // 修正: デフォルトインポートに変更
+import alldeleteCommand from './commands/manage/alldelete.js';  // 修正: デフォルトインポートに変更
+import banCommand from './commands/manage/ban.js';  // 修正: デフォルトインポートに変更
+import kickCommand from './commands/manage/kick.js';  // 修正: デフォルトインポートに変更
+import messageExecute from './commands/manage/message.js';  // 修正: デフォルトインポートに変更
+import roleCommand from './commands/manage/role.js';  // 修正: デフォルトインポートに変更
+import softbanCommand from './commands/manage/softban.js';  // 修正: デフォルトインポートに変更
 
-// .env ファイルの読み込み
 dotenv.config();
 
-// Discord Bot クライアントを作成
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.DirectMessages, // DMメッセージの取得
+        GatewayIntentBits.DirectMessages,
     ],
 });
 
@@ -34,16 +32,16 @@ const commands = [
         name: 'ping',
         description: 'Ping! Pong! と応答します。',
     },
-    omikujiCommand,  // おみくじコマンドを追加
-    mentionCommand,  // mentionコマンドを追加
-    geoquizCommand,  // geoquizコマンドを追加
-    recruitmentCommand,  // 募集コマンドを追加（button.js）
-    alldeleteCommand,  // alldeleteコマンドを追加
-    banCommand,  // banコマンドを追加
-    kickCommand,  // kickコマンドを追加
-    messageExecute,  // message.js コマンドを追加
-    roleCommand,  // roleコマンドを追加
-    softbanCommand,  // softbanコマンドを追加
+    omikujiCommand,  // 修正後のコマンド追加
+    mentionCommand,  // 修正後のコマンド追加
+    geoquizCommand,  // 修正後のコマンド追加
+    recruitmentCommand,  // 修正後のコマンド追加
+    alldeleteCommand,  // 修正後のコマンド追加
+    banCommand,  // 修正後のコマンド追加
+    kickCommand,  // 修正後のコマンド追加
+    messageExecute,  // 修正後のコマンド追加
+    roleCommand,  // 修正後のコマンド追加
+    softbanCommand,  // 修正後のコマンド追加
 ];
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -70,32 +68,42 @@ client.on('interactionCreate', async (interaction) => {
 
     const { commandName } = interaction;
 
-    if (commandName === 'ping') {
-        // スラッシュコマンドの「ping」に反応
-        await pingCommand.execute(interaction);  // ここで pingCommand を実行
-    } else if (commandName === 'おみくじ') {
-        // おみくじコマンドの実行
-        await omikujiExecute(interaction);
-    } else if (commandName === 'mention') {
-        // mention コマンドの処理
-        await mentionCommand.execute(interaction); // ここで mentionCommand を実行
-    } else if (commandName === 'geoquiz') {
-        // geoquiz コマンドの実行
-        await geoquizExecute(interaction); // geoquiz の処理（実装済み）
-    } else if (commandName === 'recruitment') {  // recruitmentコマンドの処理
-        await recruitmentCommand.execute(interaction);  // recruitmentCommandのexecuteメソッドを呼び出す
-    } else if (commandName === 'alldelete') {  // alldeleteコマンドの処理
-        await alldeleteCommand.execute(interaction);  // alldeleteCommandのexecuteメソッドを呼び出す
-    } else if (commandName === 'ban') {  // ban コマンドの処理
-        await banCommand.execute(interaction);  // banCommand の execute メソッドを呼び出す
-    } else if (commandName === 'kick') {  // kick コマンドの処理
-        await kickCommand.execute(interaction);  // kickCommand の execute メソッドを呼び出す
-    } else if (commandName === 'message') {  // message コマンドの処理
-        await messageExecute(interaction);  // message.js の execute メソッドを呼び出す
-    } else if (commandName === 'role') {
-        await roleCommand.execute(interaction);  // role.js の execute メソッドを呼び出す
-    } else if (commandName === 'softban') {
-        await softbanCommand.execute(interaction);  // softban.js の execute メソッドを呼び出す
+    switch (commandName) {
+        case 'ping':
+            await pingCommand.execute(interaction);  // pingコマンド
+            break;
+        case 'おみくじ':
+            await omikujiCommand.execute(interaction);  // おみくじコマンド
+            break;
+        case 'mention':
+            await mentionCommand.execute(interaction);  // mentionコマンド
+            break;
+        case 'geoquiz':
+            await geoquizCommand.execute(interaction);  // geoquizコマンド
+            break;
+        case 'recruitment':
+            await recruitmentCommand.execute(interaction);  // recruitmentコマンド
+            break;
+        case 'alldelete':
+            await alldeleteCommand.execute(interaction);  // alldeleteコマンド
+            break;
+        case 'ban':
+            await banCommand.execute(interaction);  // banコマンド
+            break;
+        case 'kick':
+            await kickCommand.execute(interaction);  // kickコマンド
+            break;
+        case 'message':
+            await messageExecute(interaction);  // messageコマンド
+            break;
+        case 'role':
+            await roleCommand.execute(interaction);  // roleコマンド
+            break;
+        case 'softban':
+            await softbanCommand.execute(interaction);  // softbanコマンド
+            break;
+        default:
+            console.log(`Unknown command: ${commandName}`);
     }
 });
 
