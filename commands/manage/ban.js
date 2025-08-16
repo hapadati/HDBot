@@ -1,7 +1,3 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { PermissionFlagsBits } = require('discord.js');
-
-// 名前付きエクスポート
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('ban')
@@ -13,17 +9,11 @@ module.exports = {
 
   async execute(interaction) {
     const user = interaction.options.getUser('user');
-
-    // コマンド実行者がBAN権限を持っているか確認
     if (!interaction.member.permissions.has(PermissionFlagsBits.BanMembers)) {
       return interaction.reply({ content: 'あなたにはこの操作を行う権限がありません。', ephemeral: true });
     }
-
     try {
-      // ユーザーをサーバーから取得
       const member = await interaction.guild.members.fetch(user.id);
-      
-      // ユーザーが存在してバンできるか確認
       if (member && member.bannable) {
         await member.ban({ reason: 'ユーザーがサーバーの規則に違反したためバンされました。' });
         return interaction.reply(`${user.tag} さんがサーバーからバンされました。`);
