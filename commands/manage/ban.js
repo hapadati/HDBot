@@ -9,7 +9,7 @@ module.exports = {
       option.setName('user')
         .setDescription('バンするユーザー')
         .setRequired(true)),
-  
+
   async execute(interaction) {
     const user = interaction.options.getUser('user');
 

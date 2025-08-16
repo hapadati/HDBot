@@ -8,7 +8,7 @@ import { mentionCommand } from './commands/utils/mention.js';
 import { data as geoquizCommand, execute as geoquizExecute } from './commands/utils/geoquiz.js'; 
 import { data as recruitmentCommand } from './commands/manage/button.js';
 const alldeleteCommand = require('./commands/manage/alldelete.js');  // 修正: require に変更
-import banCommand from './commands/manage/ban.js';  // デフォルトエクスポートでインポート
+import { data as banCommand } from './commands/manage/ban.js';  // 名前付きエクスポートを使用
 import { data as kickCommand } from './commands/manage/kick.js'; 
 import { execute as messageExecute } from './commands/manage/message.js'; 
 import { data as roleCommand } from './commands/manage/role.js'; 
