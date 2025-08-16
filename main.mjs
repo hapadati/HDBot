@@ -17,7 +17,6 @@ import { recruitmentCommand } from './commands/manage/button.js';
 import { alldeleteCommand } from './commands/manage/alldelete.js';  
 import { banCommand } from './commands/manage/ban.js'; 
 import { kickCommand } from './commands/manage/kick.js'; 
-import { messageExecute } from './commands/manage/message.js'; 
 import { roleCommand } from './commands/manage/role.js'; 
 import { softbanCommand } from './commands/manage/softban.js'; 
 import { timeoutCommand } from './commands/manage/timeout.js'; 
@@ -47,7 +46,6 @@ const commands = [
     alldeleteCommand,
     banCommand,  // 修正後のコマンド追加
     kickCommand,  // 修正後のコマンド追加
-    messageExecute,  // 修正後のコマンド追加
     roleCommand,  // 修正後のコマンド追加
     softbanCommand,  // 修正後のコマンド追加
     timeoutCommand,
@@ -102,9 +100,6 @@ client.on('interactionCreate', async (interaction) => {
         case 'kick':
             await kickCommand.execute(interaction);  // kickコマンド
             break;
-        case 'message':
-            await messageExecute(interaction);  // messageコマンド
-            break;
         case 'role':
             await roleCommand.execute(interaction);  // roleコマンド
             break;
@@ -121,6 +116,7 @@ async function handleRollCommand(interaction) {
     const dice = interaction.options.getString('dice');
     await handleMessageRoll(interaction);  // dirdice.js の handleMessageRoll を呼び出す
 }
+
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
   
@@ -129,39 +125,39 @@ client.on('messageCreate', async (message) => {
     const matches = message.content.match(messageLinkRegex);
   
     if (matches) {
-      for (const match of matches) {
-        const [fullMatch, guildId, channelId, messageId] = match.match(messageLinkRegex);
+        for (const match of matches) {
+            const [fullMatch, guildId, channelId, messageId] = match.match(messageLinkRegex);
   
-        try {
-          // メッセージを取得
-          const channel = await client.channels.fetch(channelId);
-          const targetMessage = await channel.messages.fetch(messageId);
+            try {
+                // メッセージを取得
+                const channel = await client.channels.fetch(channelId);
+                const targetMessage = await channel.messages.fetch(messageId);
   
-          // 埋め込みメッセージを作成
-          const embed = new MessageEmbed()
-            .setTitle(`メッセージ内容`)
-            .setDescription(targetMessage.content)
-            .addField('送信者', targetMessage.author.tag, true)
-            .addField('送信日時', targetMessage.createdAt.toLocaleString(), true)
-            .setColor('#00ff00')
-            .setTimestamp(targetMessage.createdAt);
+                // 埋め込みメッセージを作成
+                const embed = new MessageEmbed()
+                    .setTitle(`メッセージ内容`)
+                    .setDescription(targetMessage.content)
+                    .addField('送信者', targetMessage.author.tag, true)
+                    .addField('送信日時', targetMessage.createdAt.toLocaleString(), true)
+                    .setColor('#00ff00')
+                    .setTimestamp(targetMessage.createdAt);
   
-          // 埋め込みメッセージを送信
-          message.reply({ embeds: [embed] });
-        } catch (error) {
-          if (error.message === 'Unknown Message') {
-            message.reply('指定されたメッセージは削除されたため、表示できませんでした。');
-          } else if (error.message.includes('Missing Access')) {
-            message.reply('指定されたメッセージを取得するための権限がありません。');
-          } else {
-            message.reply('メッセージを取得する際に予期しないエラーが発生しました。');
-            console.error('メッセージ取得エラー:', error);
-          }
+                // 埋め込みメッセージを送信
+                message.reply({ embeds: [embed] });
+            } catch (error) {
+                if (error.message === 'Unknown Message') {
+                    message.reply('指定されたメッセージは削除されたため、表示できませんでした。');
+                } else if (error.message.includes('Missing Access')) {
+                    message.reply('指定されたメッセージを取得するための権限がありません。');
+                } else {
+                    message.reply('メッセージを取得する際に予期しないエラーが発生しました。');
+                    console.error('メッセージ取得エラー:', error);
+                }
+            }
         }
-      }
     }
-  });
-  
+});
+
 // メッセージ処理（通常メッセージで「ping」に反応）
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;  // ボットメッセージを無視
@@ -203,17 +199,16 @@ process.on('SIGINT', () => {
 console.log('🔑 Discord Token (最初の5文字だけ表示):', process.env.DISCORD_TOKEN?.slice(0, 5));
 
 client.login(process.env.DISCORD_TOKEN)
-  .catch(error => {
-    console.error('❌ Discord にログイン失敗:', error);
-    process.exit(1);
-  });
+    .catch(error => {
+        console.error('❌ Discord にログイン失敗:', error);
+        process.exit(1);
+    });
 
 client.once('ready', () => {
-  console.log(`✅ Discord にログイン成功しました！`);
-  console.log(`🎉 ${client.user.tag} が正常に起動しました！`);
-  console.log(`📊 ${client.guilds.cache.size} つのサーバーに参加中`);
+    console.log(`✅ Discord にログイン成功しました！`);
+    console.log(`🎉 ${client.user.tag} が正常に起動しました！`);
+    console.log(`📊 ${client.guilds.cache.size} つのサーバーに参加中`);
 });
-
 
 // Express Webサーバーの設定（Render用）
 const app = express();
