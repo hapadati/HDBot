@@ -7,7 +7,7 @@ import { handleMessageRoll } from './commands/utils/dirdice.js';
 import { mentionCommand } from './commands/utils/mention.js'; 
 import { data as geoquizCommand, execute as geoquizExecute } from './commands/utils/geoquiz.js'; 
 import { data as recruitmentCommand } from './commands/manage/button.js';
-import { data as alldeleteCommand } from './commands/manage/alldelete.js'; // 名前付きエクスポート
+const alldeleteCommand = require('./commands/manage/alldelete.js');  // 修正: require に変更
 import { data as banCommand } from './commands/manage/ban.js'; 
 import { data as kickCommand } from './commands/manage/kick.js'; 
 import { execute as messageExecute } from './commands/manage/message.js'; 
@@ -36,7 +36,7 @@ const commands = [
     mentionCommand,  // 修正後のコマンド追加
     geoquizCommand,  // 修正後のコマンド追加
     recruitmentCommand,  // 修正後のコマンド追加
-    alldeleteCommand,  // 修正後のコマンド追加
+    alldeleteCommand.data,
     banCommand,  // 修正後のコマンド追加
     kickCommand,  // 修正後のコマンド追加
     messageExecute,  // 修正後のコマンド追加
