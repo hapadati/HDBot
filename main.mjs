@@ -7,12 +7,14 @@ import { handleMessageRoll } from './commands/utils/dirdice.js';
 import { mentionCommand } from './commands/utils/mention.js'; 
 import { data as geoquizCommand, execute as geoquizExecute } from './commands/utils/geoquiz.js'; 
 const recruitmentCommand = (await import('./commands/manage/button.js')).default;
-const alldeleteCommand = require('./commands/manage/alldelete.js');  // 修正: require に変更
-const banCommand = require ('./commands/manage/ban.js');  // 名前付きエクスポートを使用
-const kickCommand = require ('./commands/manage/kick.js'); 
-const messageExecute = require ('./commands/manage/message.js'); 
-const roleCommand = require ('./commands/manage/role.js'); 
-const softbanCommand = require ('./commands/manage/softban.js'); 
+
+// 他のモジュールもすべて `import` に変更
+import { alldeleteCommand } from './commands/manage/alldelete.js';  
+import { banCommand } from './commands/manage/ban.js'; 
+import { kickCommand } from './commands/manage/kick.js'; 
+import { messageExecute } from './commands/manage/message.js'; 
+import { roleCommand } from './commands/manage/role.js'; 
+import { softbanCommand } from './commands/manage/softban.js'; 
 
 dotenv.config();
 
