@@ -9,10 +9,10 @@ import { data as geoquizCommand, execute as geoquizExecute } from './commands/ut
 import { data as recruitmentCommand } from './commands/manage/button.js';
 const alldeleteCommand = require('./commands/manage/alldelete.js');  // 修正: require に変更
 const banCommand = require ('./commands/manage/ban.js');  // 名前付きエクスポートを使用
-import { data as kickCommand } from './commands/manage/kick.js'; 
-import { execute as messageExecute } from './commands/manage/message.js'; 
-import { data as roleCommand } from './commands/manage/role.js'; 
-import { data as softbanCommand } from './commands/manage/softban.js'; 
+const kickCommand = require ('./commands/manage/kick.js'); 
+const messageExecute = require ('./commands/manage/message.js'); 
+const roleCommand = require ('./commands/manage/role.js'); 
+const softbanCommand = require ('./commands/manage/softban.js'); 
 
 dotenv.config();
 
