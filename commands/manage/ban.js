@@ -1,6 +1,5 @@
-// ban.js
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { PermissionFlagsBits } = require('discord.js');
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { PermissionFlagsBits } from 'discord.js';
 
 export const banCommand = {
   data: new SlashCommandBuilder()

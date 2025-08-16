@@ -6,7 +6,7 @@ import { pingCommand } from './commands/utils/ping.js';
 import { handleMessageRoll } from './commands/utils/dirdice.js'; 
 import { mentionCommand } from './commands/utils/mention.js'; 
 import { data as geoquizCommand, execute as geoquizExecute } from './commands/utils/geoquiz.js'; 
-const recruitmentCommand = (await import('./commands/manage/button.js')).default;
+import {recruitmentCommand} from './commands/manage/button.js';
 
 // 他のモジュールもすべて `import` に変更
 import { alldeleteCommand } from './commands/manage/alldelete.js';  

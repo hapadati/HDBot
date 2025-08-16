@@ -1,5 +1,5 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { PermissionFlagsBits, DiscordAPIError } = require('discord.js');
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { PermissionFlagsBits, DiscordAPIError } from 'discord.js';
 
 // 時間の単位とそのミリ秒変換を定義
 const timeUnits = {
@@ -23,6 +23,7 @@ export const timeoutCommand = {
       option.setName('duration')
         .setDescription('タイムアウトの時間（秒、分、時間、日、週、年）')
         .setRequired(true)),
+  
   async execute(interaction) {
     const user = interaction.options.getUser('user');
     const durationString = interaction.options.getString('duration');
@@ -41,6 +42,7 @@ export const timeoutCommand = {
     // 単位をミリ秒に変換
     const timeoutDuration = amount * timeUnits[unit];
 
+    // コマンド実行者がタイムアウト権限を持っているか確認
     if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
       return interaction.reply({ content: 'あなたにはこの操作を行う権限がありません。', ephemeral: true });
     }

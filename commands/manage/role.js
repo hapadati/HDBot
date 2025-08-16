@@ -1,7 +1,7 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
-const { PermissionFlagsBits } = require('discord.js');
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { MessageActionRow, MessageButton, MessageEmbed, PermissionFlagsBits } from 'discord.js';
 
+// rolebuttonコマンド
 export const roleCommand = {
   data: new SlashCommandBuilder()
     .setName('rolebutton')
@@ -93,7 +93,7 @@ export const roleCommand = {
 };
 
 // /removebutton コマンドの実装
-module.exports.removebutton = {
+export const removebutton = {
   data: new SlashCommandBuilder()
     .setName('removebutton')
     .setDescription('指定したボタンIDのメッセージを削除')

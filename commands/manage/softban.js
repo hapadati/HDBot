@@ -1,5 +1,5 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { PermissionFlagsBits } = require('discord.js');
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { PermissionFlagsBits } from 'discord.js';
 
 export const softbanCommand = {
   data: new SlashCommandBuilder()
@@ -13,6 +13,7 @@ export const softbanCommand = {
       option.setName('duration')
         .setDescription('メッセージ削除の期間（例: 1d, 1h、無期限なら空欄）')
         .setRequired(false)),
+  
   async execute(interaction) {
     const user = interaction.options.getUser('user');
     const durationString = interaction.options.getString('duration') || '0'; // 空欄なら無期限（0秒）
@@ -30,7 +31,7 @@ export const softbanCommand = {
     }
 
     let daysToDelete = 0; // デフォルトはメッセージ削除なし（無期限）
-    
+
     // durationが指定された場合、単位を解析してメッセージ削除の範囲を設定
     if (durationString && /^(\d+)([smhdwy])$/.test(durationString)) {
       const match = durationString.match(/^(\d+)([smhdwy])$/);
@@ -48,6 +49,9 @@ export const softbanCommand = {
 
       // 単位に応じて削除する日数を決定
       daysToDelete = amount * timeUnits[unit];
+    } else if (durationString !== '0') {
+      // 無効な入力があった場合の処理
+      return interaction.reply({ content: '無効な期間が指定されました。正しい形式（例: 1d, 1h）で入力してください。', ephemeral: true });
     }
 
     try {
@@ -59,7 +63,9 @@ export const softbanCommand = {
 
       return interaction.reply(`${user.tag} さんがソフトバンされました（削除範囲: 過去${daysToDelete}日分のメッセージ）。`);
     } catch (error) {
-      return interaction.reply({ content: 'ソフトバンの処理中にエラーが発生しました。', ephemeral: true });
+      // エラーハンドリングの強化
+      console.error('ソフトバンエラー:', error);
+      return interaction.reply({ content: `ソフトバンの処理中にエラーが発生しました: ${error.message}`, ephemeral: true });
     }
   },
 };

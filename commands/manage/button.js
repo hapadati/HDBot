@@ -1,5 +1,5 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { MessageActionRow, MessageButton, MessageEmbed } from 'discord.js';
 
 // 応募者リスト
 let applicants = [];
@@ -26,7 +26,7 @@ export const recruitmentCommand = {
     .addStringOption(option =>
       option.setName('title')
         .setDescription('募集のタイトル（指定しなければユーザー名を使います）')
-    ),
+    ), 
 
   async execute(interaction) {
     const role = interaction.options.getRole('role');

@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, MessageEmbed } = require('discord.js');
+import { Client, GatewayIntentBits, MessageEmbed } from 'discord.js';
 
 const client = new Client({
   intents: [
