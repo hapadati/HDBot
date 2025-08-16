@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { MessageActionRow, MessageButton, MessageEmbed } from 'discord.js';
+import pkg from 'discord.js';
+const { MessageActionRow, MessageButton, MessageEmbed } = pkg;
 
 // 応募者リスト
 let applicants = [];
@@ -26,7 +27,7 @@ export const recruitmentCommand = {
     .addStringOption(option =>
       option.setName('title')
         .setDescription('募集のタイトル（指定しなければユーザー名を使います）')
-    ), 
+    ),
 
   async execute(interaction) {
     const role = interaction.options.getRole('role');
@@ -68,8 +69,8 @@ export const recruitmentCommand = {
       fetchReply: true
     });
 
-    // 収集する時間（指定された秒数後）
-    setTimeout(async () => {
+    // 収集する時間（指定された秒数後） 
+    const timeout = setTimeout(async () => {
       if (applicants.length === 0) {
         return interaction.channel.send('応募者がいませんでした。');
       }
@@ -111,6 +112,7 @@ export const recruitmentCommand = {
     });
 
     collector.on('end', async () => {
+      // コレクターが終了したら、結果を送信
       if (applicants.length === 0) {
         await interaction.channel.send('応募者がいませんでした。');
       }
