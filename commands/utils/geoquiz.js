@@ -388,7 +388,7 @@ await interaction.editReply({
       await buttonInteraction.deferUpdate(); // ボタンの読み込み状態を解除
     
       if (buttonInteraction.customId === correct) {
-        await buttonInteraction.followUp({ content: '正解です！🎉', ephemeral: flase });
+        await buttonInteraction.followUp({ content: '正解です！🎉', ephemeral: false });
       } else {
         await buttonInteraction.followUp({ content: `残念！正解は ${correct} でした。`, ephemeral: false });
       }
