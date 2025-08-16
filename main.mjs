@@ -1,18 +1,18 @@
 import { Client, GatewayIntentBits, Routes, REST } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
-import omikujiCommand from './commands/utils/omikuji.js';  // 修正: デフォルトインポートに変更
-import pingCommand from './commands/utils/ping.js';  // 修正: デフォルトインポートに変更
-import { handleMessageRoll } from './commands/utils/dirdice.js';  // サイコロコマンド
-import mentionCommand from './commands/utils/mention.js';  // 修正: デフォルトインポートに変更
-import geoquizCommand from './commands/utils/geoquiz.js';  // 修正: デフォルトインポートに変更
-import recruitmentCommand from './commands/manage/button.js';  // 修正: デフォルトインポートに変更
-import alldeleteCommand from './commands/manage/alldelete.js';  // 修正: デフォルトインポートに変更
-import banCommand from './commands/manage/ban.js';  // 修正: デフォルトインポートに変更
-import kickCommand from './commands/manage/kick.js';  // 修正: デフォルトインポートに変更
-import messageExecute from './commands/manage/message.js';  // 修正: デフォルトインポートに変更
-import roleCommand from './commands/manage/role.js';  // 修正: デフォルトインポートに変更
-import softbanCommand from './commands/manage/softban.js';  // 修正: デフォルトインポートに変更
+import { data as omikujiCommand, execute as omikujiExecute } from './commands/utils/omikuji.js'; 
+import { pingCommand } from './commands/utils/ping.js'; 
+import { handleMessageRoll } from './commands/utils/dirdice.js'; 
+import { mentionCommand } from './commands/utils/mention.js'; 
+import { data as geoquizCommand, execute as geoquizExecute } from './commands/utils/geoquiz.js'; 
+import { data as recruitmentCommand } from './commands/manage/button.js';
+import { data as alldeleteCommand } from './commands/manage/alldelete.js'; // 名前付きエクスポート
+import { data as banCommand } from './commands/manage/ban.js'; 
+import { data as kickCommand } from './commands/manage/kick.js'; 
+import { execute as messageExecute } from './commands/manage/message.js'; 
+import { data as roleCommand } from './commands/manage/role.js'; 
+import { data as softbanCommand } from './commands/manage/softban.js'; 
 
 dotenv.config();
 
