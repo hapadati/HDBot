@@ -384,18 +384,18 @@ await interaction.editReply({
     const filter = i => i.isButton() && i.user.id === interaction.user.id;
     const collector = interaction.channel.createMessageComponentCollector({ filter });
 
-    collector.on('collect', async (buttonInteraction) => {
+      collector.on('collect', async (buttonInteraction) => {
+      await buttonInteraction.deferUpdate(); // ボタンの読み込み状態を解除
+    
       if (buttonInteraction.customId === correct) {
-        await buttonInteraction.reply({ content: '正解です！🎉' });
+        await buttonInteraction.followUp({ content: '正解です！🎉', ephemeral: flase });
       } else {
-        await buttonInteraction.reply({ content: `残念！正解は ${correct} でした。` });
+        await buttonInteraction.followUp({ content: `残念！正解は ${correct} でした。`, ephemeral: false });
       }
     
-      // ボタンを削除
-      await interaction.editReply({
-        components: []
-      });
+      // ボタン無効化
+      await interaction.editReply({ components: [] });
     
-      collector.stop(); // 回答後はコレクターを停止（任意）
+      collector.stop();
     });    
   }
