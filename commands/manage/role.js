@@ -1,5 +1,5 @@
 import pkg from 'discord.js';  // discord.jsをdefaultインポート
-const { MessageActionRow, MessageButton, EmbedBuilder, PermissionFlagsBits } = pkg;  // 必要なコンポーネントを取り出す
+const { MessageActionRow, MessageButton, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } = pkg;  // 必要なコンポーネントを取り出す
 
 // rolebuttonコマンド
 export const roleCommand = {
