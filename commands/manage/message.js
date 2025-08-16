@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, MessageEmbed } from 'discord.js';
+import { Client, GatewayIntentBits, EmbedBuilder } from 'discord.js'; // EmbedBuilderに変更
 
 const client = new Client({
   intents: [
@@ -22,31 +22,40 @@ client.on('messageCreate', async (message) => {
       const [fullMatch, guildId, channelId, messageId] = match.match(messageLinkRegex);
 
       try {
-        // メッセージを取得
+        // チャンネルを取得
         const channel = await client.channels.fetch(channelId);
+
+        // チャンネルが見つかった場合、メッセージを取得
         const targetMessage = await channel.messages.fetch(messageId);
 
-        // 埋め込みメッセージを作成
-        const embed = new MessageEmbed()
+        // 埋め込みメッセージを作成（MessageEmbed → EmbedBuilderに変更）
+        const embed = new EmbedBuilder()
           .setTitle(`メッセージ内容`)
           .setDescription(targetMessage.content)
-          .addField('送信者', targetMessage.author.tag, true)
-          .addField('送信日時', targetMessage.createdAt.toLocaleString(), true)
+          .addFields(
+            { name: '送信者', value: targetMessage.author.tag, inline: true },
+            { name: '送信日時', value: targetMessage.createdAt.toLocaleString(), inline: true }
+          )
           .setColor('#00ff00')
           .setTimestamp(targetMessage.createdAt);
 
         // 埋め込みメッセージを送信
-        message.reply({ embeds: [embed] });
+        await message.reply({ embeds: [embed] });
+
       } catch (error) {
+        // エラーハンドリング
         if (error.message === 'Unknown Message') {
           // メッセージが削除されている場合
-          message.reply('指定されたメッセージは削除されたため、表示できませんでした。');
+          await message.reply('指定されたメッセージは削除されたため、表示できませんでした。');
         } else if (error.message.includes('Missing Access')) {
           // Botにアクセス権限がない場合
-          message.reply('指定されたメッセージを取得するための権限がありません。');
+          await message.reply('指定されたメッセージを取得するための権限がありません。');
+        } else if (error.message.includes('Unknown Channel')) {
+          // チャンネルが存在しない場合
+          await message.reply('指定されたチャンネルが存在しません。');
         } else {
           // その他のエラー
-          message.reply('メッセージを取得する際に予期しないエラーが発生しました。');
+          await message.reply('メッセージを取得する際に予期しないエラーが発生しました。');
           console.error('メッセージ取得エラー:', error);
         }
       }
