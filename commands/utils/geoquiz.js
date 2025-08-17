@@ -164,6 +164,7 @@ export const data = new SlashCommandBuilder()
       });
   
       collector.on('collect', async btn => {
+        console.log(`Button clicked: ${btn.customId}`);
         await btn.deferUpdate();
         if (btn.customId === correct) {
           // ✅ ここで updateScore が定義されている必要あり
