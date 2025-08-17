@@ -83,7 +83,7 @@ const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
 
 const getImage = async (query) => {
   const fullQuery = `${query} Japan`; // ← ここを追加
-  
+
   console.log('getImage called with query:', query);
   try {
     const res = await axios.get('https://api.pexels.com/v1/search', {
@@ -191,3 +191,4 @@ export const data = new SlashCommandBuilder()
     }
   }
   
+  export const geoquizCommand = { data, execute };
