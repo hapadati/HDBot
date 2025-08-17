@@ -6,10 +6,10 @@ import express from 'express';
 import pkg from 'discord.js';
 const { MessageEmbed, MessageActionRow, MessageButton, PermissionFlagsBits } = pkg;
 
-import { data as omikujiCommand, execute as omikujiExecute } from './commands/utils/omikuji.js'; 
+import { omikujiCommand } from './commands/utils/omikuji.js';
 import { pingCommand } from './commands/utils/ping.js'; 
 import { handleMessageRoll } from './commands/utils/dirdice.js'; 
-import { mentionCommand } from './commands/utils/mention.js'; 
+import { data as mentionCommand, execute as mentionExecute } from './commands/utils/mention.js';
 import { data as geoquizCommand, execute as geoquizExecute } from './commands/utils/geoquiz.js'; 
 import { recruitmentCommand } from './commands/manage/button.js';
 
@@ -52,27 +52,21 @@ const commands = [
         name: 'ping',
         description: 'Ping! Pong! と応答します。',
     },
-    ...rawCommands
-        .map((cmd, i) => {
-            if (cmd?.data && typeof cmd.data.toJSON === 'function') {
+    ...rawCommands.map((cmd, i) => {
+        try {
+            if (typeof cmd?.data?.toJSON === 'function') {
                 return cmd.data.toJSON();
             } else {
-                console.warn(`⚠️ コマンド[${i}] に .data.toJSON() が存在しません`, cmd);
-                return null;
+                throw new Error(`.data.toJSON() が存在しない`);
             }
-        })
-        .filter(Boolean) // null を除外
+        } catch (err) {
+            console.warn(`⚠️ コマンド[${i}] に .data.toJSON() がありません:`, err.message);
+            return null;
+        }
+    }).filter(Boolean),
 ];
 
-console.log("🔍 登録送信内容:", JSON.stringify(commands, null, 2));
 
-
-commands.forEach((cmd, index) => {
-  console.log(`🔍 Command[${index}]`, JSON.stringify(cmd, null, 2));
-  if (!cmd?.name || !cmd?.description) {
-    console.error(`❌ Command at index ${index} is missing required fields:`, cmd);
-  }
-});
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 // スラッシュコマンドの同期処理
@@ -102,11 +96,11 @@ client.on('interactionCreate', async (interaction) => {
             await pingCommand.execute(interaction);  // pingコマンド
             break;
         case 'おみくじ':
-            await omikujiCommand.execute(interaction);  // おみくじコマンド
-            break;
-        case 'mention':
-            await mentionCommand.execute(interaction);  // mentionコマンド
-            break;
+            await omikujiCommand.execute(interaction);
+            break;            
+         case 'mention':
+            await mentionExecute(interaction);
+            break;            
         case 'geoquiz':
             await geoquizCommand.execute(interaction);  // geoquizコマンド
             break;
