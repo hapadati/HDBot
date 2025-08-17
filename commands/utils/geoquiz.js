@@ -204,8 +204,4 @@ export const data = new SlashCommandBuilder()
     }
   }
 
-  console.log('正解:', correct);
-console.log('検索クエリ:', query);
-console.log('選択肢:', choices);
-
   export const geoquizCommand = { data, execute };
