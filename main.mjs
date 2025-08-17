@@ -52,9 +52,19 @@ const commands = [
         name: 'ping',
         description: 'Ping! Pong! と応答します。',
     },
-    ...rawCommands.map(cmd => cmd.data.toJSON())
+    ...rawCommands
+        .map((cmd, i) => {
+            if (cmd?.data && typeof cmd.data.toJSON === 'function') {
+                return cmd.data.toJSON();
+            } else {
+                console.warn(`⚠️ コマンド[${i}] に .data.toJSON() が存在しません`, cmd);
+                return null;
+            }
+        })
+        .filter(Boolean) // null を除外
 ];
-console.log("🔍 登録送信内容:", JSON.stringify(commandJSON, null, 2));
+
+console.log("🔍 登録送信内容:", JSON.stringify(commands, null, 2));
 
 
 commands.forEach((cmd, index) => {
