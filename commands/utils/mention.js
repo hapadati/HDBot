@@ -35,7 +35,5 @@ export async function execute(interaction) {
     console.log(`📝 ${interaction.user.tag} が /mention コマンドを使用`);
 }
 
-export const mentionCommand = {
-    data,
-    execute
-};
+export const mentionCommand = { data, execute };
+

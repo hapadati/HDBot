@@ -400,7 +400,5 @@ await interaction.editReply({
     });    
   }
 
-  export const geoquizCommand = {
-    data,
-    execute
-};
+  export const geoquizCommand = { data, execute };
+
