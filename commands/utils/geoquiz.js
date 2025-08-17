@@ -132,6 +132,12 @@ export const data = new SlashCommandBuilder()
   
       const mode = interaction.options.getString('mode');
       const { location: correct, query } = getRandomPlace(mode);
+
+          // ✅ ← ここでログ出力
+    console.log('正解:', correct);
+    console.log('検索クエリ:', query);
+    console.log('画像URL:', imageUrl);
+
       const imageUrl = await getImage(query);
   
       if (!imageUrl) {
@@ -147,7 +153,7 @@ export const data = new SlashCommandBuilder()
       const otherChoices = Object.keys(placeQueries[mode]).filter(l => l !== correct);
       const choicePool = [correct, ...shuffleArray(otherChoices).slice(0, 4)];
       const choices = shuffleArray(choicePool); // ← ここで最終シャッフル
-
+   console.log('選択肢:', choices);
   
       const row = new ActionRowBuilder().addComponents(
         choices.map(choice =>
@@ -180,7 +186,7 @@ export const data = new SlashCommandBuilder()
   
           await btn.followUp({ content: `🎉 正解！ **${correct}**`, ephemeral: false });
         } else {
-          await btn.followUp({ content: `😢 不正解！正解は **${correct}**`, ephemeral: flase });
+          await btn.followUp({ content: `😢 不正解！正解は **${correct}**`, ephemeral: false });
         }
   
         await interaction.editReply({ components: [] });
@@ -193,7 +199,7 @@ export const data = new SlashCommandBuilder()
       if (interaction.deferred || interaction.replied) {
         await interaction.editReply({ content: '❌ エラーが発生しました。' });
       } else {
-        await interaction.reply({ content: '❌ エラーが発生しました。', ephemeral: true });
+        await interaction.reply({ content: '❌ エラーが発生しました。', ephemeral: falue });
       }
     }
   }
