@@ -11,6 +11,7 @@ import { pingCommand } from './commands/utils/ping.js';
 import { handleMessageRoll } from './commands/utils/dirdice.js'; 
 import { mentionCommand } from './commands/utils/mention.js';
 import { geoquizCommand } from './commands/utils/geoquiz.js';
+import { geoleaderboardCommand } from './commands/utils/geoleaderboard.js';
 import { recruitmentCommand } from './commands/manage/button.js';
 
 // 他のモジュールもすべて `import` に変更
@@ -45,6 +46,7 @@ const rawCommands = [
     roleCommand,
     softbanCommand,
     timeoutCommand,
+    geoleaderboardCommand,
 ];
 
 const commands = [
@@ -103,6 +105,9 @@ client.on('interactionCreate', async (interaction) => {
             break;            
         case 'geoquiz':
             await geoquizCommand.execute(interaction);  // geoquizコマンド
+            break;
+        case 'geoquiz':
+            await geoquizCommand.execute(interaction);
             break;
         case 'recruitment':
             await recruitmentCommand.execute(interaction);  // recruitmentコマンド
