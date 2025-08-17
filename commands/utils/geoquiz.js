@@ -82,6 +82,8 @@ const shuffleArray = arr => [...arr].sort(() => Math.random() - 0.5);
 const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
 
 const getImage = async (query) => {
+  const fullQuery = `${query} Japan`; // ← ここを追加
+  
   console.log('getImage called with query:', query);
   try {
     const res = await axios.get('https://api.pexels.com/v1/search', {
@@ -119,60 +121,73 @@ export const data = new SlashCommandBuilder()
         { name: '世界', value: 'world' }
       )
   );
-
-export async function execute(interaction) {
-  await interaction.deferReply();
-
-  const mode = interaction.options.getString('mode');
-  const { location: correct, query } = getRandomPlace(mode);
-  const imageUrl = await getImage(query);
-
-  if (!imageUrl) {
-    await interaction.editReply('画像が取得できませんでした。');
-    return;
-  }
-
-  const embed = new EmbedBuilder()
-    .setTitle('この場所はどこ？🌍')
-    .setImage(imageUrl)
-    .setColor(0x00AE86);
-
-  const otherChoices = Object.keys(placeQueries[mode]).filter(l => l !== correct);
-  const choices = shuffleArray([correct, ...shuffleArray(otherChoices).slice(0, 4)]); // 5択
-
-  const row = new ActionRowBuilder().addComponents(
-    choices.map(choice =>
-      new ButtonBuilder()
-        .setCustomId(choice)
-        .setLabel(choice)
-        .setStyle(ButtonStyle.Primary)
-    )
-  );
-
-  await interaction.editReply({
-    content: 'この画像はどこ？',
-    embeds: [embed],
-    components: [row],
-  });
-
-  const collector = interaction.channel.createMessageComponentCollector({
-    filter: i => i.user.id === interaction.user.id,
-    time: 30_000,
-  });
-
-  collector.on('collect', async btn => {
-    await btn.deferUpdate();
-    if (btn.customId === correct) {
-      updateScore(interaction.guild.id, interaction.user.id);
-      await btn.followUp({ content: `🎉 正解！ **${correct}**`, ephemeral: true });
-    } else {
-      await btn.followUp({ content: `😢 不正解！正解は **${correct}**`, ephemeral: true });
+  export async function execute(interaction) {
+    try {
+      // ✅ まず deferReply() でインタラクションを保持（重要）
+      await interaction.deferReply();
+  
+      const mode = interaction.options.getString('mode');
+      const { location: correct, query } = getRandomPlace(mode);
+      const imageUrl = await getImage(query);
+  
+      if (!imageUrl) {
+        await interaction.editReply('画像が取得できませんでした。');
+        return;
+      }
+  
+      const embed = new EmbedBuilder()
+        .setTitle('この場所はどこ？🌍')
+        .setImage(imageUrl)
+        .setColor(0x00AE86);
+  
+      const otherChoices = Object.keys(placeQueries[mode]).filter(l => l !== correct);
+      const choices = shuffleArray([correct, ...shuffleArray(otherChoices).slice(0, 4)]); // 5択
+  
+      const row = new ActionRowBuilder().addComponents(
+        choices.map(choice =>
+          new ButtonBuilder()
+            .setCustomId(choice)
+            .setLabel(choice)
+            .setStyle(ButtonStyle.Primary)
+        )
+      );
+  
+      await interaction.editReply({
+        content: 'この画像はどこ？',
+        embeds: [embed],
+        components: [row],
+      });
+  
+      const collector = interaction.channel.createMessageComponentCollector({
+        filter: i => i.user.id === interaction.user.id,
+        time: 30_000,
+      });
+  
+      collector.on('collect', async btn => {
+        await btn.deferUpdate();
+        if (btn.customId === correct) {
+          // ✅ ここで updateScore が定義されている必要あり
+          if (typeof updateScore === 'function') {
+            updateScore(interaction.guild.id, interaction.user.id);
+          }
+  
+          await btn.followUp({ content: `🎉 正解！ **${correct}**`, ephemeral: true });
+        } else {
+          await btn.followUp({ content: `😢 不正解！正解は **${correct}**`, ephemeral: true });
+        }
+  
+        await interaction.editReply({ components: [] });
+        collector.stop();
+      });
+  
+    } catch (error) {
+      console.error('❌ コマンド実行中にエラー:', error);
+      // 応答していなければ reply、していれば editReply
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({ content: '❌ エラーが発生しました。' });
+      } else {
+        await interaction.reply({ content: '❌ エラーが発生しました。', ephemeral: true });
+      }
     }
-
-    await interaction.editReply({ components: [] });
-    collector.stop();
-  });
-
-}
-
-export const geoquizCommand = { data, execute };
+  }
+  
