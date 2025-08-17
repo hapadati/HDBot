@@ -34,22 +34,27 @@ const client = new Client({
 });
 
 // スラッシュコマンドの設定
+import { SlashCommandBuilder } from 'discord.js';
+
+// pingCommand も SlashCommandBuilder で定義すること！
 const commands = [
-    {
-        name: 'ping',
-        description: 'Ping! Pong! と応答します。',
-    },
-    omikujiCommand,  // 修正後のコマンド追加
-    mentionCommand,  // 修正後のコマンド追加
-    geoquizCommand,  // 修正後のコマンド追加
-    recruitmentCommand,  // 修正後のコマンド追加
-    alldeleteCommand,
-    banCommand,  // 修正後のコマンド追加
-    kickCommand,  // 修正後のコマンド追加
-    roleCommand,  // 修正後のコマンド追加
-    softbanCommand,  // 修正後のコマンド追加
-    timeoutCommand,
+    new SlashCommandBuilder()
+        .setName('ping')
+        .setDescription('Ping! Pong! と応答します。')
+        .toJSON(),
+
+    omikujiCommand.data.toJSON(),
+    mentionCommand.data.toJSON(),
+    geoquizCommand.data.toJSON(),
+    recruitmentCommand.data.toJSON(),
+    alldeleteCommand.data.toJSON(),
+    banCommand.data.toJSON(),
+    kickCommand.data.toJSON(),
+    roleCommand.data.toJSON(),
+    softbanCommand.data.toJSON(),
+    timeoutCommand.data.toJSON()
 ];
+
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
