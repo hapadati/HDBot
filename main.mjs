@@ -5,17 +5,21 @@ import express from 'express';
 // CommonJS の形でインポートする修正
 import pkg from 'discord.js';
 const { MessageEmbed, MessageActionRow, MessageButton, PermissionFlagsBits } = pkg;
-import * as pingCommand from './commands/utils/ping.js';
-import * as omikujiCommand from './commands/utils/omikuji.js';
-import * as geoquizCommand from './commands/utils/geoquiz.js';
-import * as mentionCommand from './commands/utils/mention.js';
-import * as recruitmentCommand from './commands/manage/button.js';
-import * as alldeleteCommand from './commands/manage/alldelete.js';
-import * as banCommand from './commands/manage/ban.js';
-import * as kickCommand from './commands/manage/kick.js';
-import * as roleCommand from './commands/manage/role.js';
-import * as softbanCommand from './commands/manage/softban.js';
-import * as timeoutCommand from './commands/manage/timeout.js';
+
+import { data as omikujiCommand, execute as omikujiExecute } from './commands/utils/omikuji.js'; 
+import { pingCommand } from './commands/utils/ping.js'; 
+import { handleMessageRoll } from './commands/utils/dirdice.js'; 
+import { mentionCommand } from './commands/utils/mention.js'; 
+import { data as geoquizCommand, execute as geoquizExecute } from './commands/utils/geoquiz.js'; 
+import { recruitmentCommand } from './commands/manage/button.js';
+
+// 他のモジュールもすべて `import` に変更
+import { alldeleteCommand } from './commands/manage/alldelete.js';  
+import { banCommand } from './commands/manage/ban.js'; 
+import { kickCommand } from './commands/manage/kick.js'; 
+import { roleCommand } from './commands/manage/role.js'; 
+import { softbanCommand } from './commands/manage/softban.js'; 
+import { timeoutCommand } from './commands/manage/timeout.js'; 
 
 dotenv.config();
 
@@ -30,28 +34,22 @@ const client = new Client({
 });
 
 // スラッシュコマンドの設定
-import { SlashCommandBuilder } from 'discord.js';
-
-// pingCommand も SlashCommandBuilder で定義すること！
 const commands = [
-    new SlashCommandBuilder()
-        .setName('ping')
-        .setDescription('Ping! Pong! と応答します。')
-        .toJSON(),
-
-            omikujiCommand.data.toJSON(),
-            geoquizCommand.data.toJSON(),
-            mentionCommand.data.toJSON(),
-            recruitmentCommand.data.toJSON(),
-            alldeleteCommand.data.toJSON(),
-            banCommand.data.toJSON(),
-            kickCommand.data.toJSON(),
-            roleCommand.data.toJSON(),
-            softbanCommand.data.toJSON(),
-            timeoutCommand.data.toJSON()
-          ];
-          
-
+    {
+        name: 'ping',
+        description: 'Ping! Pong! と応答します。',
+    },
+    omikujiCommand,  // 修正後のコマンド追加
+    mentionCommand,  // 修正後のコマンド追加
+    geoquizCommand,  // 修正後のコマンド追加
+    recruitmentCommand,  // 修正後のコマンド追加
+    alldeleteCommand,
+    banCommand,  // 修正後のコマンド追加
+    kickCommand,  // 修正後のコマンド追加
+    roleCommand,  // 修正後のコマンド追加
+    softbanCommand,  // 修正後のコマンド追加
+    timeoutCommand,
+];
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
