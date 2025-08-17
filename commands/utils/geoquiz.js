@@ -10,9 +10,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
-console.log('ACCESS_KEY:', ACCESS_KEY ? ACCESS_KEY.slice(0, 5) + '...' : 'undefined');
-
 // ✅ 地理データ（日本 / 世界）
 const placeQueries = {
   japan: {
@@ -101,7 +98,7 @@ const getImage = async (query) => {
     console.log('Pexels API response:', res.data);
 
     const photo = res.data.photos?.[0];
-    return photo?.src?.landscape || null;
+    return photo?.src?.original || null;
   } catch (e) {
     console.error('Pexels error:', e.message);
     return null;
