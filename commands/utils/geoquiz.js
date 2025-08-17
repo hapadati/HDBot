@@ -82,25 +82,32 @@ const getRandomPlace = (mode) => {
 };
 
 const shuffleArray = arr => [...arr].sort(() => Math.random() - 0.5);
+const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
 
 const getImage = async (query) => {
   console.log('getImage called with query:', query);
   try {
-    const res = await axios.get('https://api.unsplash.com/photos/random', {
+    const res = await axios.get('https://api.pexels.com/v1/search', {
+      headers: {
+        Authorization: PEXELS_API_KEY,
+      },
       params: {
-        client_id: ACCESS_KEY,
         query,
+        per_page: 1,
         orientation: 'landscape',
-        content_filter: 'high',
       },
     });
-    console.log('Unsplash API response:', res.data);
-    return res.data?.urls?.regular || null;
+
+    console.log('Pexels API response:', res.data);
+
+    const photo = res.data.photos?.[0];
+    return photo?.src?.landscape || null;
   } catch (e) {
-    console.error('Unsplash error:', e.message);
+    console.error('Pexels error:', e.message);
     return null;
   }
-    }
+};
+
 
 // ✅ スラッシュコマンド定義
 export const data = new SlashCommandBuilder()
