@@ -11,6 +11,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
+console.log('ACCESS_KEY:', ACCESS_KEY ? ACCESS_KEY.slice(0, 5) + '...' : 'undefined');
 
 // ✅ 地理データ（日本 / 世界）
 const placeQueries = {
@@ -83,6 +84,7 @@ const getRandomPlace = (mode) => {
 const shuffleArray = arr => [...arr].sort(() => Math.random() - 0.5);
 
 const getImage = async (query) => {
+  console.log('getImage called with query:', query);
   try {
     const res = await axios.get('https://api.unsplash.com/photos/random', {
       params: {
