@@ -51,6 +51,13 @@ const commands = [
     timeoutCommand,
 ];
 
+commands.forEach((cmd, index) => {
+    console.log(`🔍 Command[${index}]`, JSON.stringify(cmd, null, 2));
+    if (!cmd?.name || !cmd?.description) {
+      console.error(`❌ Command at index ${index} is missing required fields:`, cmd);
+    }
+  });
+  
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 // スラッシュコマンドの同期処理
