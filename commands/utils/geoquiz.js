@@ -92,12 +92,13 @@ const getImage = async (query) => {
         content_filter: 'high',
       },
     });
+    console.log('Unsplash API response:', res.data);
     return res.data?.urls?.regular || null;
   } catch (e) {
     console.error('Unsplash error:', e.message);
     return null;
   }
-};
+    }
 
 // ✅ スラッシュコマンド定義
 export const data = new SlashCommandBuilder()
