@@ -9,8 +9,8 @@ const { MessageEmbed, MessageActionRow, MessageButton, PermissionFlagsBits } = p
 import { omikujiCommand } from './commands/utils/omikuji.js';
 import { pingCommand } from './commands/utils/ping.js'; 
 import { handleMessageRoll } from './commands/utils/dirdice.js'; 
-import { data as mentionCommand, execute as mentionExecute } from './commands/utils/mention.js';
-import { data as geoquizCommand, execute as geoquizExecute } from './commands/utils/geoquiz.js'; 
+import { mentionCommand } from './commands/utils/mention.js';
+import { geoquizCommand } from './commands/utils/geoquiz.js';
 import { recruitmentCommand } from './commands/manage/button.js';
 
 // 他のモジュールもすべて `import` に変更
@@ -99,7 +99,7 @@ client.on('interactionCreate', async (interaction) => {
             await omikujiCommand.execute(interaction);
             break;            
          case 'mention':
-            await mentionExecute(interaction);
+            await mentionCommand.execute(interaction);
             break;            
         case 'geoquiz':
             await geoquizCommand.execute(interaction);  // geoquizコマンド
