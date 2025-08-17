@@ -34,22 +34,27 @@ const client = new Client({
 });
 
 // スラッシュコマンドの設定
+const rawCommands = [
+    omikujiCommand,
+    mentionCommand,
+    geoquizCommand,
+    recruitmentCommand,
+    alldeleteCommand,
+    banCommand,
+    kickCommand,
+    roleCommand,
+    softbanCommand,
+    timeoutCommand,
+];
+
 const commands = [
     {
         name: 'ping',
         description: 'Ping! Pong! と応答します。',
     },
-    omikujiCommand,  // 修正後のコマンド追加
-    mentionCommand,  // 修正後のコマンド追加
-    geoquizCommand,  // 修正後のコマンド追加
-    recruitmentCommand,  // 修正後のコマンド追加
-    alldeleteCommand,
-    banCommand,  // 修正後のコマンド追加
-    kickCommand,  // 修正後のコマンド追加
-    roleCommand,  // 修正後のコマンド追加
-    softbanCommand,  // 修正後のコマンド追加
-    timeoutCommand,
+    ...rawCommands.map(cmd => cmd.data.toJSON())
 ];
+
 
 commands.forEach((cmd, index) => {
   console.log(`🔍 Command[${index}]`, JSON.stringify(cmd, null, 2));
