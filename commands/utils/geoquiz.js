@@ -72,10 +72,14 @@ const placeQueries = {
 };
 
 const getRandomPlace = (mode) => {
-  const options = Object.keys(placeQueries[mode]);
-  const location = options[Math.floor(Math.random() * options.length)];
-  const query = placeQueries[mode][location][Math.floor(Math.random() * placeQueries[mode][location].length)];
-  return { location, query };
+  const locations = Object.keys(placeQueries[mode]);
+  const randomIndex = Math.floor(Math.random() * locations.length);
+  const location = locations[randomIndex];
+
+  const places = placeQueries[mode][location];
+  const randomPlace = places[Math.floor(Math.random() * places.length)];
+
+  return { location, query: randomPlace };
 };
 
 const shuffleArray = arr => [...arr].sort(() => Math.random() - 0.5);
@@ -141,7 +145,9 @@ export const data = new SlashCommandBuilder()
         .setColor(0x00AE86);
   
       const otherChoices = Object.keys(placeQueries[mode]).filter(l => l !== correct);
-      const choices = shuffleArray([correct, ...shuffleArray(otherChoices).slice(0, 4)]); // 5択
+      const choicePool = [correct, ...shuffleArray(otherChoices).slice(0, 4)];
+      const choices = shuffleArray(choicePool); // ← ここで最終シャッフル
+
   
       const row = new ActionRowBuilder().addComponents(
         choices.map(choice =>
@@ -172,9 +178,9 @@ export const data = new SlashCommandBuilder()
             updateScore(interaction.guild.id, interaction.user.id);
           }
   
-          await btn.followUp({ content: `🎉 正解！ **${correct}**`, ephemeral: true });
+          await btn.followUp({ content: `🎉 正解！ **${correct}**`, ephemeral: false });
         } else {
-          await btn.followUp({ content: `😢 不正解！正解は **${correct}**`, ephemeral: true });
+          await btn.followUp({ content: `😢 不正解！正解は **${correct}**`, ephemeral: flase });
         }
   
         await interaction.editReply({ components: [] });
@@ -191,5 +197,9 @@ export const data = new SlashCommandBuilder()
       }
     }
   }
-  
+
+  console.log('正解:', correct);
+console.log('検索クエリ:', query);
+console.log('選択肢:', choices);
+
   export const geoquizCommand = { data, execute };
