@@ -89,3 +89,7 @@ function getCustomMessage(fortune) {
 
     return getRandomMessageFromFiles(fortuneDir);
 }
+export const omikujiCommand = {
+    data,
+    execute
+};

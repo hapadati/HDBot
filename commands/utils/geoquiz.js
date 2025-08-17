@@ -399,3 +399,8 @@ await interaction.editReply({
       collector.stop();
     });    
   }
+
+  export const geoquizCommand = {
+    data,
+    execute
+};

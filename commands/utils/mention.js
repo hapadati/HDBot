@@ -34,3 +34,8 @@ export async function execute(interaction) {
     await interaction.reply(mentionMessage);
     console.log(`📝 ${interaction.user.tag} が /mention コマンドを使用`);
 }
+
+export const mentionCommand = {
+    data,
+    execute
+};
