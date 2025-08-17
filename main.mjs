@@ -54,6 +54,7 @@ const commands = [
     },
     ...rawCommands.map(cmd => cmd.data.toJSON())
 ];
+console.log("🔍 登録送信内容:", JSON.stringify(commandJSON, null, 2));
 
 
 commands.forEach((cmd, index) => {
