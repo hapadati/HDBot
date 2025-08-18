@@ -66,27 +66,28 @@ const placeQueries = {
     "アメリカ": ["Statue of Liberty", "Grand Canyon", "New York"],
     "ブラジル": ["Christ the Redeemer", "Rio de Janeiro"],
     "エジプト": ["Pyramids of Giza", "Sphinx"],
-    "日本": ["Mount Fuji", "Tokyo", "Kyoto"], // 世界モードにも含める
-    // 追加可
+    "日本": ["Mount Fuji", "Tokyo", "Kyoto"],
+    "イタリア": ["Colosseum", "Venice", "Florence"],
+    "イギリス": ["Big Ben", "London Eye", "Stonehenge"],
+    "ドイツ": ["Brandenburg Gate", "Neuschwanstein Castle", "Berlin"],
+    "中国": ["Great Wall", "Forbidden City", "Shanghai"],
+    "オーストラリア": ["Sydney Opera House", "Great Barrier Reef"],
+
   },
 };
 
 const getRandomPlace = (mode) => {
-  const locations = Object.keys(placeQueries[mode]);
-  const randomIndex = Math.floor(Math.random() * locations.length);
-  const location = locations[randomIndex];
-
-  const places = placeQueries[mode][location];
-  const randomPlace = places[Math.floor(Math.random() * places.length)];
-
-  return { location, query: randomPlace };
+  const options = Object.keys(placeQueries[mode]);
+  const location = options[Math.floor(Math.random() * options.length)];
+  const query = placeQueries[mode][location][Math.floor(Math.random() * placeQueries[mode][location].length)];
+  return { location, query };
 };
 
 const shuffleArray = arr => [...arr].sort(() => Math.random() - 0.5);
 const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
 
 const getImage = async (query) => {
-  const fullQuery = `${query} Japan`; // ← ここを追加
+  const fullQuery = `${query} Japan`;
 
   console.log('getImage called with query:', query);
   try {
@@ -95,10 +96,10 @@ const getImage = async (query) => {
         Authorization: PEXELS_API_KEY,
       },
       params: {
-        query,
+        query: fullQuery, // ← 修正
         per_page: 1,
         orientation: 'landscape',
-      },
+      },      
     });
 
     console.log('Pexels API response:', res.data);
@@ -132,12 +133,6 @@ export const data = new SlashCommandBuilder()
   
       const mode = interaction.options.getString('mode');
       const { location: correct, query } = getRandomPlace(mode);
-
-          // ✅ ← ここでログ出力
-    console.log('正解:', correct);
-    console.log('検索クエリ:', query);
-    console.log('画像URL:', imageUrl);
-
       const imageUrl = await getImage(query);
   
       if (!imageUrl) {
@@ -150,10 +145,9 @@ export const data = new SlashCommandBuilder()
         .setImage(imageUrl)
         .setColor(0x00AE86);
   
-      const otherChoices = Object.keys(placeQueries[mode]).filter(l => l !== correct);
-      const choicePool = [correct, ...shuffleArray(otherChoices).slice(0, 4)];
-      const choices = shuffleArray(choicePool); // ← ここで最終シャッフル
-   console.log('選択肢:', choices);
+      const otherChoices = shuffleArray(Object.keys(placeQueries[mode]).filter(l => l !== correct)).slice(0, 4);
+      const choices = shuffleArray([correct, ...otherChoices]);
+      
   
       const row = new ActionRowBuilder().addComponents(
         choices.map(choice =>
@@ -199,9 +193,9 @@ export const data = new SlashCommandBuilder()
       if (interaction.deferred || interaction.replied) {
         await interaction.editReply({ content: '❌ エラーが発生しました。' });
       } else {
-        await interaction.reply({ content: '❌ エラーが発生しました。', ephemeral: falue });
+        await interaction.reply({ content: '❌ エラーが発生しました。', ephemeral: true });
       }
     }
   }
-
+  
   export const geoquizCommand = { data, execute };

@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { PermissionFlagsBits } from 'discord.js';
 
 export const kickCommand = {
-  data: new SlashCommandBuilder()
+data: new SlashCommandBuilder()
     .setName('kick')
     .setDescription('ユーザーをサーバーからキックします')
     .addUserOption(option => 
