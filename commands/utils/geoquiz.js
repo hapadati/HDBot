@@ -196,9 +196,9 @@ const collector = interaction.channel.createMessageComponentCollector({
       console.error('❌ コマンド実行中にエラー:', error);
       // 応答していなければ reply、していれば editReply
       if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ content: '❌ エラーが発生しました。' });
+        await interaction.editReply({ content: '❌ エラーが発生しました。応答していません。' });
       } else {
-        await interaction.reply({ content: '❌ エラーが発生しました。', ephemeral: true });
+        await interaction.reply({ content: '❌ エラーが発生しました。応答しています。', ephemeral: true });
       }
     }
   }
