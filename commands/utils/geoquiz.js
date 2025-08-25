@@ -88,8 +88,7 @@ const shuffleArray = arr => [...arr].sort(() => Math.random() - 0.5);
 const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
 
 const getImage = async (query, mode) => {
-  const fullQuery = mode === 'japan' ? `${query} Japan` : query;
-
+const fullQuery = mode === 'japan' ? `${query} ${location} Japan` : query;
   console.log('getImage called with query:', query);
   try {
     const res = await axios.get('https://api.pexels.com/v1/search', {
