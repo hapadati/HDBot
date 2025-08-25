@@ -86,8 +86,8 @@ const getRandomPlace = (mode) => {
 const shuffleArray = arr => [...arr].sort(() => Math.random() - 0.5);
 const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
 
-const getImage = async (query) => {
-  const fullQuery = `${query} Japan`;
+const getImage = async (query, mode) => {
+  const fullQuery = mode === 'japan' ? `${query} Japan` : query;
 
   console.log('getImage called with query:', query);
   try {
@@ -130,10 +130,16 @@ export const data = new SlashCommandBuilder()
     try {
       // ✅ まず deferReply() でインタラクションを保持（重要）
       await interaction.deferReply();
+
+          if (!interaction.channel || !interaction.channel.isTextBased()) {
+      await interaction.editReply('このチャンネルではクイズを実行できません。');
+      return;
+    }
+
   
       const mode = interaction.options.getString('mode');
       const { location: correct, query } = getRandomPlace(mode);
-      const imageUrl = await getImage(query);
+const imageUrl = await getImage(query, mode);
   
       if (!imageUrl) {
         await interaction.editReply('画像が取得できませんでした。');
@@ -152,7 +158,7 @@ export const data = new SlashCommandBuilder()
       const row = new ActionRowBuilder().addComponents(
         choices.map(choice =>
           new ButtonBuilder()
-            .setCustomId(choice)
+            .setCustomId(`geoquiz_${choice}`)
             .setLabel(choice)
             .setStyle(ButtonStyle.Primary)
         )
@@ -174,9 +180,9 @@ export const data = new SlashCommandBuilder()
         await btn.deferUpdate();
         if (btn.customId === correct) {
           // ✅ ここで updateScore が定義されている必要あり
-          if (typeof updateScore === 'function') {
-            updateScore(interaction.guild.id, interaction.user.id);
-          }
+        //  if (typeof updateScore === 'function') {
+        //    updateScore(interaction.guild.id, interaction.user.id);
+         // }
   
           await btn.followUp({ content: `🎉 正解！ **${correct}**`, ephemeral: false });
         } else {
