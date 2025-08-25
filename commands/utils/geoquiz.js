@@ -87,7 +87,7 @@ const getRandomPlace = (mode) => {
 const shuffleArray = arr => [...arr].sort(() => Math.random() - 0.5);
 const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
 
-const getImage = async (query, mode) => {
+const getImage = async (query, mode, location) => {
 const fullQuery = mode === 'japan' ? `${query} ${location} Japan` : query;
   console.log('getImage called with query:', query);
   try {
@@ -139,8 +139,8 @@ export const data = new SlashCommandBuilder()
   
       const mode = interaction.options.getString('mode');
       const { location: correct, query } = getRandomPlace(mode);
-const imageUrl = await getImage(query, mode);
-  
+      const imageUrl = await getImage(query, mode, correct);
+
       if (!imageUrl) {
         await interaction.editReply('画像が取得できませんでした。');
         return;
