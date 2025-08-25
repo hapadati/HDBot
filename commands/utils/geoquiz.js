@@ -4,6 +4,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
+  ComponentType,
 } from 'discord.js';
 import axios from 'axios';
 import dotenv from 'dotenv';
@@ -170,20 +171,19 @@ const imageUrl = await getImage(query, mode);
         components: [row],
       });
   
-      const collector = interaction.channel.createMessageComponentCollector({
-        filter: i => i.user.id === interaction.user.id,
-        time: 30_000,
-      });
+const collector = interaction.channel.createMessageComponentCollector({
+  filter: i =>
+    i.user.id === interaction.user.id &&
+    i.customId.startsWith('geoquiz_'),
+  componentType: ComponentType.Button,
+  time: 300_000,
+});
   
       collector.on('collect', async btn => {
         console.log(`Button clicked: ${btn.customId}`);
         await btn.deferUpdate();
-        if (btn.customId === correct) {
-          // ✅ ここで updateScore が定義されている必要あり
-        //  if (typeof updateScore === 'function') {
-        //    updateScore(interaction.guild.id, interaction.user.id);
-         // }
-  
+        const selected = btn.customId.replace('geoquiz_', '');
+        if (selected === correct) {  
           await btn.followUp({ content: `🎉 正解！ **${correct}**`, ephemeral: false });
         } else {
           await btn.followUp({ content: `😢 不正解！正解は **${correct}**`, ephemeral: false });
