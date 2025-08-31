@@ -38,13 +38,13 @@ const rawCommands = [
     omikujiCommand,
     mentionCommand,
     recruitmentCommand,
-    geoquizCommand,
     alldeleteCommand,
     banCommand,
     kickCommand,
     roleCommand,
     softbanCommand,
     timeoutCommand,
+    geoquizCommand,
 ];
 
 const commands = [
@@ -97,10 +97,7 @@ client.on('interactionCreate', async (interaction) => {
             break;
         case 'おみくじ':
             await omikujiCommand.execute(interaction);
-            break;
-        case 'softban':
-            await geoquizCommand.execute(interaction);  // geoquizコマンド
-            break;            
+            break;           
          case 'mention':
             await mentionCommand.execute(interaction);
             break;            
@@ -122,6 +119,9 @@ client.on('interactionCreate', async (interaction) => {
         case 'softban':
             await softbanCommand.execute(interaction);  // softbanコマンド
             break;
+        case 'geoquiz':
+            await geoquizCommand.execute(interaction);  // geoquizコマンド
+            break; 
         default:
             console.log(`Unknown command: ${commandName}`);
     }
