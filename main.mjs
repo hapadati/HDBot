@@ -19,6 +19,7 @@ import { kickCommand } from './commands/manage/kick.js';
 import { roleCommand } from './commands/manage/role.js'; 
 import { softbanCommand } from './commands/manage/softban.js'; 
 import { timeoutCommand } from './commands/manage/timeout.js'; 
+import { geoquizCommand } from './commands/utils/geoquiz.js';
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ const rawCommands = [
     omikujiCommand,
     mentionCommand,
     recruitmentCommand,
+    geoquizCommand,
     alldeleteCommand,
     banCommand,
     kickCommand,
@@ -95,6 +97,9 @@ client.on('interactionCreate', async (interaction) => {
             break;
         case 'おみくじ':
             await omikujiCommand.execute(interaction);
+            break;
+        case 'softban':
+            await geoquizCommand.execute(interaction);  // geoquizコマンド
             break;            
          case 'mention':
             await mentionCommand.execute(interaction);
