@@ -90,42 +90,38 @@ import {
       },
     world: {
       "フランス": [
-        {name: "Eiffel Tower", url: ""},
-        {name: "Louvre Museum", url: ""},
-        {name: "Paris", url: ""},],
+        {name: "Eiffel Tower", url: "https://i.postimg.cc/1tMbLSVG/eiffel-tower.jpg"},
+        {name: "Louvre Museum", url: "https://i.postimg.cc/Kzmdqjjc/Lourve-Museum.jpg"},
+        {name: "Paris", url: "https://i.postimg.cc/8c09zbHs/paris.jpg"},],
       "アメリカ": [
-        {name: "Statue of Liberty", url: ""},
-        {name: "Grand Canyon", url: ""},
-        {name: "New York", url: ""}],
+        {name: "Statue of Liberty", url: "https://i.postimg.cc/4d3WH9nc/new-york.jpg"},
+        {name: "Grand Canyon", url: "https://i.postimg.cc/BvphvgZs/grand-canyon.jpg"},
+        {name: "New York", url: "https://i.postimg.cc/zf8t5Mr0/statue-of-liberty.jpg"}],
       "ブラジル": [
-        {name: "Christ the Redeemer", url: ""},
-        {name: "Rio de Janeiro", url: ""}],
+        {name: "Christ the Redeemer", url: "https://i.postimg.cc/sDSPHchm/Christ-the-Redeemer.jpg"},
+        {name: "Rio de Janeiro", url: "https://i.postimg.cc/fLJmcjsx/Rio-de-Janeiro.jpg"}],
       "エジプト": [
-        {name: "Pyramids of Giza", url: ""},
-        {name: "Sphinx", url: ""}],
+        {name: "Pyramids of Giza", url: "https://i.postimg.cc/MTFJnxZW/Pyramids-of-Giza.jpg"},
+        {name: "Sphinx", url: "https://i.postimg.cc/vBBd8Dsq/sphinx.jpg"}],
       "日本": [
-        {name: "Mount Fuji", url: ""},
-        {name: "Tokyo", url: ""},
-        {name: "Kyoto", url: ""}],
+        {name: "Aomori Nebuta Festival", url: "https://i.postimg.cc/xC10Qt8f/image.jpg"},
+        {name: "Tokyo", url: "https://i.postimg.cc/HLpfX7hS/Tokyo-Tower.jpg"},
+        {name: "Kamakura", url: "https://i.postimg.cc/FKbLLHKp/Great-Buddha-of-Kamakura.jpg"}],
       "イタリア": [
-        {name: "Colosseum", url: ""},
-        {name: "Venice", url: ""},
-        {name: "Florence", url: ""}],
+        {name: "Colosseum", url: "https://i.postimg.cc/LstTbVgL/Colosseum.jpg"},
+        {name: "Venice", url: "https://i.postimg.cc/KzjB7XLq/florence.jpg"},
+        {name: "Florence", url: "https://i.postimg.cc/xCzc59xd/venice.jpg"}],
       "イギリス": [
-        {name: "Big Ben", url: ""},
-        {name: "London Eye", url: ""},
-        {name: "Stonehenge", url: ""},],
-      "ドイツ": [
-        {name: "Brandenburg Gate", url: ""},
-        {name: "Neuschwanstein Castle", url: ""},
-        {name: "Berlin", url: ""}],
-      "中国": [
-        {name: "Great Wall", url: ""},
-        {name: "Forbidden City", url: ""},
-        {name: "Shanghai", url: ""}],
-      "オーストラリア": [
-        {name: "Sydney Opera House", url: ""},
-        {name: "Great Barrier Reef", url: ""}],
+        {name: "Big Ben", url: "https://i.postimg.cc/pTPp7qQN/Bigben.jpg"},
+        {name: "London Eye", url: "https://i.postimg.cc/s24LP43H/london-eye.jpg"},
+        {name: "Stonehenge", url: "https://i.postimg.cc/BZVVC6G3/stonehenge.jpg"},],
+//      "ドイツ": [
+//        {name: "Brandenburg Gate", url: ""},
+//        {name: "Neuschwanstein Castle", url: ""},
+//        {name: "Berlin", url: ""}],
+//      "オーストラリア": [
+//        {name: "Sydney Opera House", url: ""},
+//        {name: "Great Barrier Reef", url: ""}],
   
     },
   };
