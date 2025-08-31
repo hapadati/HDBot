@@ -10,8 +10,6 @@ import { omikujiCommand } from './commands/utils/omikuji.js';
 import { pingCommand } from './commands/utils/ping.js'; 
 import { handleMessageRoll } from './commands/utils/dirdice.js'; 
 import { mentionCommand } from './commands/utils/mention.js';
-import { geoquizCommand } from './commands/utils/geoquiz.js';
-import { geoleaderboardCommand } from './commands/utils/geoleaderboard.js';
 import { recruitmentCommand } from './commands/manage/button.js';
 
 // 他のモジュールもすべて `import` に変更
@@ -38,7 +36,6 @@ const client = new Client({
 const rawCommands = [
     omikujiCommand,
     mentionCommand,
-    geoquizCommand,
     recruitmentCommand,
     alldeleteCommand,
     banCommand,
@@ -46,7 +43,6 @@ const rawCommands = [
     roleCommand,
     softbanCommand,
     timeoutCommand,
-    geoleaderboardCommand,
 ];
 
 const commands = [
@@ -103,12 +99,6 @@ client.on('interactionCreate', async (interaction) => {
          case 'mention':
             await mentionCommand.execute(interaction);
             break;            
-        case 'geoquiz':
-            await geoquizCommand.execute(interaction);  // geoquizコマンド
-            break;
-        case 'geoquiz':
-            await geoquizCommand.execute(interaction);
-            break;
         case 'recruitment':
             await recruitmentCommand.execute(interaction);  // recruitmentコマンド
             break;
@@ -171,7 +161,7 @@ client.on('messageCreate', async (message) => {
                 } else if (error.message.includes('Missing Access')) {
                     message.reply('指定されたメッセージを取得するための権限がありません。');
                 } else {
-                    message.reply('メッセージを取得する際に予期しないエラーが発生しました。');
+                    message.reply('メッセージを取得する際に予期しないエラーが発生しました。' );
                     console.error('メッセージ取得エラー:', error);
                 }
             }

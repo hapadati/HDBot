@@ -1,9 +1,7 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import pkg from 'discord.js';
 const { MessageActionRow, MessageButton, MessageEmbed } = pkg;
-
-// 応募者リスト
-let applicants = [];
+const recruitmentMap = new Map(); // 募集ごとの状態を格納
 
 export const recruitmentCommand = {
   data: new SlashCommandBuilder()
@@ -14,10 +12,15 @@ export const recruitmentCommand = {
         .setDescription('応募を対象とするロール')
         .setRequired(true)
     )
+    .addBooleanOption(option =>
+      option.setName('enable_timer')
+        .setDescription('終了時間を使うかどうか')
+        .setRequired(true)
+    )
     .addStringOption(option =>
       option.setName('duration')
-        .setDescription('募集の終了時間（例: 1s, 30m, 2h, 3d, 1w, 2y）')
-        .setRequired(true)
+        .setDescription('募集の終了時間（例: 1s, 30m, 2h, 3d, 1w, 2y）') // 任意に変更
+        .setRequired(false)
     )
     .addIntegerOption(option =>
       option.setName('winners')
@@ -25,32 +28,53 @@ export const recruitmentCommand = {
         .setRequired(true)
     )
     .addStringOption(option =>
+      option.setName('custom_id')
+        .setDescription('この募集の一意のID（後から操作するために使用）')
+        .setRequired(false)
+    )
+
+    .addStringOption(option =>
       option.setName('title')
         .setDescription('募集のタイトル（指定しなければユーザー名を使います）')
     ),
 
   async execute(interaction) {
-    const role = interaction.options.getRole('role');
-    const durationStr = interaction.options.getString('duration');
-    const winnersCount = interaction.options.getInteger('winners');
-    const title = interaction.options.getString('title') || interaction.user.username;
+const role = interaction.options.getRole('role');
+const enableTimer = interaction.options.getBoolean('enable_timer');
+const durationStr = interaction.options.getString('duration');
+const winnersCount = interaction.options.getInteger('winners');
+const title = interaction.options.getString('title') || interaction.user.username;
+const customId = interaction.options.getString('custom_id') || `${interaction.user.id}-${Date.now()}`;
 
-    // 終了時間の計算
-    const duration = parseDuration(durationStr);
+    let duration = null;
 
-    if (duration === null) {
-      return interaction.reply('終了時間の形式が正しくありません。例: 1s, 30m, 2h, 3d, 1w, 2y');
+    if (enableTimer) {
+      if (!durationStr) {
+        return interaction.reply({ content: '終了時間を使用する場合は duration を指定してください。', ephemeral: true });
+      }
+      duration = parseDuration(durationStr);
+      if (duration === null) {
+        return interaction.reply({ content: '終了時間の形式が正しくありません。例: 1s, 30m, 2h, 3d, 1w, 2y', ephemeral: true });
+      }
     }
+
+    // 応募者リスト
+    let applicants = [];
 
     // 募集開始の埋め込みメッセージ
     const embed = new MessageEmbed()
       .setTitle(title)
       .setDescription(`応募するには以下のボタンをクリックしてください。`)
       .setColor('#00FF00')
-      .addField('募集期間', `終了時間: ${new Date(Date.now() + duration * 1000).toLocaleString()}`, true)
       .addField('応募対象', role.toString(), true)
       .addField('作成者', interaction.user.username, true)
       .setTimestamp();
+
+    if (enableTimer) {
+      embed.addField('募集期間', `終了時間: ${new Date(Date.now() + duration * 1000).toLocaleString()}`, true);
+    } else {
+      embed.addField('募集期間', '無制限（手動で終了）', true);
+    }
 
     // 応募ボタン
     const row = new MessageActionRow()
@@ -69,42 +93,30 @@ export const recruitmentCommand = {
       fetchReply: true
     });
 
-    // 収集する時間（指定された秒数後） 
-    const timeout = setTimeout(async () => {
-      if (applicants.length === 0) {
-        return interaction.channel.send('応募者がいませんでした。');
-      }
+    // 応募者・設定を Map に保存（今後 `/recruitment_end` などと連携可能）
+recruitmentMap.set(customId, {
+  applicants,
+  winnersCount,
+  role,
+  recruitmentMessage,
+  interaction,
+});
 
-      // 指定された人数分の抽選
-      const winners = getRandomWinners(applicants, winnersCount);
 
-      if (winners.length === 0) {
-        return interaction.channel.send('抽選対象者が足りません。');
-      }
-
-      // 結果の埋め込み
-      const resultEmbed = new MessageEmbed()
-        .setTitle('抽選結果')
-        .setDescription(`指定された人数（${winnersCount}人）の抽選が完了しました！`)
-        .setColor('#FF0000')
-        .addField('抽選結果', winners.join('\n'))
-        .setTimestamp();
-
-      // 結果を送信
-      await interaction.channel.send({ embeds: [resultEmbed] });
-
-      // 応募者リストをリセット
-      applicants = [];
-      await recruitmentMessage.delete(); // 募集メッセージを削除
-    }, duration * 1000); // 終了時間後に実行
-
-    // ボタンのインタラクションを受け取る
+    // 応募ボタンのフィルター
     const filter = i => i.customId === 'apply_button' && i.member.roles.cache.has(role.id);
-    const collector = interaction.channel.createMessageComponentCollector({ filter, time: duration * 1000 });
+    const collectorOptions = { filter };
+
+    if (enableTimer) {
+      collectorOptions.time = duration * 1000;
+    }
+
+    const collector = interaction.channel.createMessageComponentCollector(collectorOptions);
 
     collector.on('collect', async (i) => {
-      if (!applicants.includes(i.user.username)) {
-        applicants.push(i.user.username); // 応募者リストに追加
+      const current = recruitmentMap.get(customId);
+      if (!current.applicants.includes(i.user.username)) {
+        current.applicants.push(i.user.username);
         await i.reply({ content: '応募が完了しました！', ephemeral: true });
       } else {
         await i.reply({ content: 'すでに応募しています。', ephemeral: true });
@@ -112,31 +124,69 @@ export const recruitmentCommand = {
     });
 
     collector.on('end', async () => {
-      // コレクターが終了したら、結果を送信
-      if (applicants.length === 0) {
-        await interaction.channel.send('応募者がいませんでした。');
+      if (enableTimer) {
+        const current = recruitmentMap.get(customId);
+        await finalizeRecruitment(customId);
       }
     });
+
+    if (enableTimer) {
+      setTimeout(async () => {
+        await finalizeRecruitment(customId);
+      }, duration * 1000);
+    }
   },
 };
+
+// 募集終了・抽選処理（手動/自動 共通）
+async function finalizeRecruitment(customId) {
+  const data = recruitmentMap.get(customId);
+  if (!data) return;
+
+  const { applicants, winnersCount, recruitmentMessage, interaction } = data;
+
+  if (applicants.length === 0) {
+    await interaction.channel.send('応募者がいませんでした。');
+    recruitmentMap.delete(customId);
+    return;
+  }
+
+  const winners = getRandomWinners(applicants, winnersCount);
+  if (winners.length === 0) {
+    await interaction.channel.send('抽選対象者が足りません。');
+    recruitmentMap.delete(customId);
+    return;
+  }
+
+  const resultEmbed = new MessageEmbed()
+    .setTitle('抽選結果')
+    .setDescription(`指定された人数（${winnersCount}人）の抽選が完了しました！`)
+    .setColor('#FF0000')
+    .addField('抽選結果', winners.join('\n'))
+    .setTimestamp();
+
+  await interaction.channel.send({ embeds: [resultEmbed] });
+
+  // 募集メッセージ削除とデータクリア
+  await recruitmentMessage.delete();
+  recruitmentMap.delete(customId);
+}
 
 // 時間文字列（s, m, h, d, w, y）を秒数に変換する関数
 function parseDuration(durationStr) {
   const regex = /^(\d+)([smhdwy])$/;
   const match = durationStr.match(regex);
-
   if (!match) return null;
-
   const value = parseInt(match[1], 10);
   const unit = match[2];
 
   const units = {
-    s: 1,        // 秒
-    m: 60,       // 分
-    h: 3600,     // 時間
-    d: 86400,    // 日
-    w: 604800,   // 週
-    y: 31536000, // 年
+    s: 1,
+    m: 60,
+    h: 3600,
+    d: 86400,
+    w: 604800,
+    y: 31536000,
   };
 
   return value * units[unit];
@@ -149,7 +199,6 @@ function getRandomWinners(applicants, winnersCount) {
 
   for (let i = 0; i < winnersCount; i++) {
     if (copyOfApplicants.length === 0) break;
-
     const randomIndex = Math.floor(Math.random() * copyOfApplicants.length);
     winners.push(copyOfApplicants.splice(randomIndex, 1)[0]);
   }
