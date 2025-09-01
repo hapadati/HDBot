@@ -86,7 +86,28 @@ import {
       "石川県": [
         {name: "Kenrokuen Garden", url: "https://i.postimg.cc/tgvq10jJ/image.jpg"},
         {name: "Kanazawa Castle", url: "https://i.postimg.cc/CLCwGngW/image.jpg"},
-        {name: "21st Century Museum of Contemporary Art", url: "https://i.postimg.cc/VNJyVdxs/21.jpg"}], 
+        {name: "21st Century Museum of Contemporary Art", url: "https://i.postimg.cc/VNJyVdxs/21.jpg"}],
+      "福井県": [
+        {name: "Tojinbo Cliffs", url: "https://i.postimg.cc/wxSWJjyP/Tojinbo-cliffs.jpg"},
+        {name: "Eiheiji Temple", url: "https://i.postimg.cc/KjdtMj05/Eiheiji-temple.jpg"},
+        {name: "Fukui Prefectural Dinosaur Museum", url: "https://i.postimg.cc/KzpPmJLw/Fukui-Prefectural-Dinosaur-Museum.jpg"}],
+      "山梨県": [
+        {name: "Lake Kawaguchi Fuji", url: "https://i.postimg.cc/6QwLc7tj/Lake-Kawaguchi.webp"},
+        {name: "Chureito Pagoda", url: "https://i.postimg.cc/YqYdxBQS/chureito-pagoda.jpg"}],
+      "長野県": [
+        {name: "Matsumoto Castle", url: "https://i.postimg.cc/6p2tc0Bc/Matsumoto-Castle.webp"},
+        {name: "Jigokudani Monkey Park", url: "https://i.postimg.cc/BnrsVK60/Jidokudani-Monkey-Park.jpg"}],
+      "岐阜県": [
+        {name: "Shirakawa-go", url: "https://i.postimg.cc/DZdXZhDS/Shirakawago.jpg"},
+        {name: "Gifu Castle", url: "https://i.postimg.cc/TPv1WSng/Gifu-Castle.jpg"},
+        {name: "Gifu", url: "https://i.postimg.cc/1XvVGHyP/Gifu.webp"}],
+      "静岡県": [
+        {name: "Mount Fuji", url: "https://i.postimg.cc/63WBwNN6/Mt-Fuji.jpg"},
+        {name: "Izu Peninsula", url: "https://i.postimg.cc/W46sQ1Cf/image.jpg"}],
+      "愛知県": [
+        {name: "Nagoya Castle", url: "https://i.postimg.cc/nrPJxjHp/Nagoya-Castle.jpg"},
+        {name: "Atsuta Shrine", url: "https://i.postimg.cc/zDSHNJZW/Atsuta-Shrine.jpg"},
+        {name: "Nagoya Science Museum", url: "https://i.postimg.cc/hPNB3dy0/Nagoya-city-science-museum.jpg"}], 
       },
     world: {
       "フランス": [
