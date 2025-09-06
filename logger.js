@@ -43,3 +43,8 @@ export async function logToSheets({
     console.error("Failed to write log to Sheets:", err.message);
   }
 }
+const spreadsheet = await sheets.spreadsheets.get({
+  spreadsheetId: SPREADSHEET_ID,
+});
+
+console.log(spreadsheet.data.sheets.map(s => s.properties.title));
