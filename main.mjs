@@ -1,4 +1,5 @@
 import { Client, GatewayIntentBits, Routes, REST } from 'discord.js';
+import { logToSheets } from './logger.mjs';
 import dotenv from 'dotenv';
 import express from 'express';
 
@@ -125,6 +126,16 @@ client.on('interactionCreate', async (interaction) => {
         default:
             console.log(`Unknown command: ${commandName}`);
     }
+    
+  await logToSheets({
+    serverId: interaction.guildId,
+    userId: interaction.user.id,
+    channelId: interaction.channelId,
+    level: "INFO",
+    timestamp: interaction.createdAt.toISOString(),  // 呼び出し元の timestamp
+    cmd: interaction.commandName,
+    message: "Slash command executed",
+  });
 });
 
 // サイコロコマンドの処理
@@ -172,6 +183,15 @@ client.on('messageCreate', async (message) => {
             }
         }
     }
+    await logToSheets({
+        serverId: message.guildId,
+        userId: message.author.id,
+        channelId: message.channelId,
+        level: "INFO",
+        timestamp: message.createdAt.toISOString(),  // 呼び出し元の timestamp
+        cmd: "message",
+        message: message.content,
+    });
 });
 
 // メッセージ処理（通常メッセージで「ping」に反応）
@@ -224,6 +244,15 @@ client.once('ready', () => {
     console.log(`✅ Discord にログイン成功しました！`);
     console.log(`🎉 ${client.user.tag} が正常に起動しました！`);
     console.log(`📊 ${client.guilds.cache.size} つのサーバーに参加中`);
+    logToSheets({
+        serverId: "system",
+        userId: "system",
+        channelId: "system",
+        level: "INFO",
+        timestamp: new Date().toISOString(),
+        cmd: "startup",
+        message: `${client.user.tag} が起動しました`,
+    });
 });
 
 // Express Webサーバーの設定（Render用）
