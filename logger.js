@@ -8,7 +8,7 @@ const auth = new google.auth.GoogleAuth({
 
 const sheets = google.sheets({ version: "v4", auth });
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
-const SHEET_NAME = "DiscordBotLog";
+const SHEET_NAME = "logs";
 
 // 共通ログ関数
 export async function logToSheets({
@@ -33,7 +33,7 @@ export async function logToSheets({
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}`,
+      range: `${SHEET_NAME}!A:G`,
       valueInputOption: "RAW",
       requestBody: { values },
     });
