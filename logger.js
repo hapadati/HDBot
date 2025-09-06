@@ -33,7 +33,7 @@ export async function logToSheets({
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A:G`,
+      range: `${SHEET_NAME}`,
       valueInputOption: "RAW",
       requestBody: { values },
     });
