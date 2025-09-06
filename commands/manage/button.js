@@ -17,15 +17,15 @@ export const recruitmentCommand = {
         .setDescription('終了時間を使うかどうか')
         .setRequired(true)
     )
-    .addStringOption(option =>
-      option.setName('duration')
-        .setDescription('募集の終了時間（例: 1s, 30m, 2h, 3d, 1w, 2y）') // 任意に変更
-        .setRequired(false)
-    )
     .addIntegerOption(option =>
       option.setName('winners')
         .setDescription('抽選する人数')
         .setRequired(true)
+    )
+    .addStringOption(option =>
+      option.setName('duration')
+        .setDescription('募集の終了時間（例: 1s, 30m, 2h, 3d, 1w, 2y）') // 任意に変更
+        .setRequired(false)
     )
     .addStringOption(option =>
       option.setName('custom_id')
