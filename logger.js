@@ -8,7 +8,7 @@ const auth = new google.auth.GoogleAuth({
 
 const sheets = google.sheets({ version: "v4", auth });
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
-const SHEET_NAME = "Discord bot log";
+const SHEET_NAME = "DiscordBotLog";
 
 // 共通ログ関数
 export async function logToSheets({
