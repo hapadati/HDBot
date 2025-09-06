@@ -6,9 +6,15 @@ const auth = new google.auth.GoogleAuth({
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
 
+const spreadsheet = await sheets.spreadsheets.get({
+  spreadsheetId: SPREADSHEET_ID,
+});
+
+console.log(spreadsheet.data.sheets.map(s => s.properties.title));
+
 const sheets = google.sheets({ version: "v4", auth });
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
-const SHEET_NAME = "logs";
+const SHEET_NAME = spreadsheet.data.sheets.map(s => s.properties.title);
 
 // 共通ログ関数
 export async function logToSheets({
@@ -42,9 +48,5 @@ export async function logToSheets({
   } catch (err) {
     console.error("Failed to write log to Sheets:", err.message);
   }
-  const spreadsheet = await sheets.spreadsheets.get({
-    spreadsheetId: SPREADSHEET_ID,
-  });
-  
-  console.log(spreadsheet.data.sheets.map(s => s.properties.title));
+
 }
