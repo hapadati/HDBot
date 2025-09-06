@@ -1,5 +1,5 @@
 import { Client, GatewayIntentBits, Routes, REST } from 'discord.js';
-import { logToSheets } from './logger.mjs';
+import { logToSheets } from './logger.js';
 import dotenv from 'dotenv';
 import express from 'express';
 
