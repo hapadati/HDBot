@@ -205,7 +205,26 @@ client.on('messageCreate', async (message) => {
         // 通常メッセージで「ping」に反応
         await message.reply('🏓 Pong!');
     }
-
+    if (message.content.trim() === '( ´◔‸◔`)') {
+        await message.reply('つなしないよ、安知谷だけ見て！');
+        return;
+    }
+    if (message.content.trim() === '# ( ´◔‸◔`)') {
+        await message.reply('つなしないよ、安知谷だけ見て！');
+        return;
+    }
+    if (message.content.trim() === '## ( ´◔‸◔`)') {
+        await message.reply('つなしないよ、安知谷だけ見て！');
+        return;
+    }
+    if (message.content.trim() === '### ( ´◔‸◔`)') {
+        await message.reply('つなしないよ、安知谷だけ見て！');
+        return;
+    }
+    if (message.content.trim() === '-# ( ´◔‸◔`)') {
+        await message.reply('つなしないよ、安知谷だけ見て！');
+        return;
+    }
     const dicePattern = /(dd\d+|(\d+)d(\d+))/i;
     const match = message.content.match(dicePattern);
 
