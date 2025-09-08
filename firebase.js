@@ -1,11 +1,19 @@
+// 📂 firestore.js
 import admin from 'firebase-admin';
-import fs from 'fs';
+import { readFileSync } from 'fs';
 
-const serviceAccountPath = '/etc/secrets/firebase-account.json'; // Secret File
-const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf-8'));
+// Render の secret file を利用する場合
+const serviceAccount = JSON.parse(
+  readFileSync('/etc/secrets/firebase-account.json', 'utf8')
+);
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
 
-export const db = admin.firestore();
+const db = admin.firestore();
+
+// 👇 これを追加するのを忘れない！
+export { db };
