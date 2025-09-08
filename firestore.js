@@ -1,6 +1,9 @@
 // firestore.js
 import { db } from "./firebase.js";
 
+// ✅ db をエクスポート
+export { db };
+
 // 📌 ユーザーポイント管理
 export async function addUserPoints(guildId, userId, amount) {
   const ref = db.collection("guilds").doc(guildId).collection("points").doc(userId);
