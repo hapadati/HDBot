@@ -1,29 +1,20 @@
-import { Client, GatewayIntentBits, Routes, REST } from 'discord.js';
+// main.mjs
+import { Client, GatewayIntentBits, REST, Routes } from 'discord.js';
 import { logToSheets } from './logger.js';
 import dotenv from 'dotenv';
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// CommonJS の形でインポートする修正
-import pkg from 'discord.js';
-const { MessageEmbed, MessageActionRow, MessageButton, PermissionFlagsBits } = pkg;
+// ESM 用 __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-import { omikujiCommand } from './commands/utils/omikuji.js';
-import { pingCommand } from './commands/utils/ping.js'; 
-import { handleMessageRoll } from './commands/utils/dirdice.js'; 
-import { mentionCommand } from './commands/utils/mention.js';
-import { recruitmentCommand } from './commands/manage/button.js';
-
-// 他のモジュールもすべて `import` に変更
-import { alldeleteCommand } from './commands/manage/alldelete.js';  
-import { banCommand } from './commands/manage/ban.js'; 
-import { kickCommand } from './commands/manage/kick.js'; 
-import { roleCommand } from './commands/manage/role.js'; 
-import { softbanCommand } from './commands/manage/softban.js'; 
-import { timeoutCommand } from './commands/manage/timeout.js'; 
-import { geoquizCommand } from './commands/utils/geoquiz.js';
-
+// .env 読み込み
 dotenv.config();
 
+// Discord クライアント
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -34,7 +25,23 @@ const client = new Client({
     ],
 });
 
-// スラッシュコマンドの設定
+// ==========================
+// 📂 コマンド読み込み
+// ==========================
+import { omikujiCommand } from './commands/utils/omikuji.js';
+import { pingCommand } from './commands/utils/ping.js';
+import { handleMessageRoll } from './commands/utils/dirdice.js';
+import { mentionCommand } from './commands/utils/mention.js';
+import { recruitmentCommand } from './commands/manage/button.js';
+import { alldeleteCommand } from './commands/manage/alldelete.js';
+import { banCommand } from './commands/manage/ban.js';
+import { kickCommand } from './commands/manage/kick.js';
+import { roleCommand } from './commands/manage/role.js';
+import { softbanCommand } from './commands/manage/softban.js';
+import { timeoutCommand } from './commands/manage/timeout.js';
+import { geoquizCommand } from './commands/utils/geoquiz.js';
+
+// 基本コマンド
 const rawCommands = [
     omikujiCommand,
     mentionCommand,
@@ -48,29 +55,37 @@ const rawCommands = [
     geoquizCommand,
 ];
 
-const commands = [
-    {
-        name: 'ping',
-        description: 'Ping! Pong! と応答します。',
-    },
-    ...rawCommands.map((cmd, i) => {
-        try {
-            if (typeof cmd?.data?.toJSON === 'function') {
-                return cmd.data.toJSON();
-            } else {
-                throw new Error(`.data.toJSON() が存在しない`);
-            }
-        } catch (err) {
-            console.warn(`⚠️ コマンド[${i}] に .data.toJSON() がありません:`, err.message);
-            return null;
-        }
-    }).filter(Boolean),
-];
+// 📂 points コマンドの自動読み込み
+const pointsCommands = [];
+const pointsPath = path.join(__dirname, 'commands', 'points');
 
+if (fs.existsSync(pointsPath)) {
+    const pointFiles = fs.readdirSync(pointsPath).filter(file => file.endsWith('.js'));
+
+    for (const file of pointFiles) {
+        const filePath = path.join(pointsPath, file);
+        const command = await import(filePath);
+
+        if (command?.data && typeof command.execute === 'function') {
+            pointsCommands.push(command);
+            console.log(`✅ 読み込み成功: points/${file}`);
+        } else {
+            console.warn(`⚠️ 読み込み失敗: points/${file}`);
+        }
+    }
+}
+
+// ==========================
+// 📂 スラッシュコマンド登録
+// ==========================
+const commands = [
+    pingCommand.data.toJSON(), // 固定コマンド
+    ...rawCommands.map(cmd => cmd.data.toJSON()),
+    ...pointsCommands.map(cmd => cmd.data.toJSON()),
+];
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
-// スラッシュコマンドの同期処理
 (async () => {
     try {
         console.log('Started refreshing application (/) commands.');
@@ -80,131 +95,94 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
             { body: commands }
         );
 
-        console.log('Successfully reloaded application (/) commands.');
+        console.log('✅ Successfully reloaded application (/) commands.');
     } catch (error) {
         console.error('❌ コマンド登録エラー:', error);
     }
 })();
 
-// スラッシュコマンドの処理
+// ==========================
+// 📂 Interaction 処理
+// ==========================
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isCommand()) return;
 
     const { commandName } = interaction;
 
-    switch (commandName) {
-        case 'ping':
-            await pingCommand.execute(interaction);  // pingコマンド
-            break;
-        case 'おみくじ':
-            await omikujiCommand.execute(interaction);
-            break;           
-         case 'mention':
-            await mentionCommand.execute(interaction);
-            break;            
-        case 'recruitment':
-            await recruitmentCommand.execute(interaction);  // recruitmentコマンド
-            break;
-        case 'alldelete':
-            await alldeleteCommand.execute(interaction);  // alldeleteコマンド
-            break;
-        case 'ban':
-            await banCommand.execute(interaction);  // banコマンド
-            break;
-        case 'kick':
-            await kickCommand.execute(interaction);  // kickコマンド
-            break;
-        case 'role':
-            await roleCommand.execute(interaction);  // roleコマンド
-            break;
-        case 'softban':
-            await softbanCommand.execute(interaction);  // softbanコマンド
-            break;
-        case 'geoquiz':
-            await geoquizCommand.execute(interaction);  // geoquizコマンド
-            break; 
-        default:
-            console.log(`Unknown command: ${commandName}`);
-    }
-    
-  await logToSheets({
-    serverId: interaction.guildId,
-    userId: interaction.user.id,
-    channelId: interaction.channelId,
-    level: "INFO",
-    timestamp: interaction.createdAt.toISOString(),  // 呼び出し元の timestamp
-    cmd: interaction.commandName,
-    message: "Slash command executed",
-  });
-});
+    try {
+        // 基本コマンド
+        switch (commandName) {
+            case 'ping':
+                await pingCommand.execute(interaction);
+                break;
+            case 'おみくじ':
+                await omikujiCommand.execute(interaction);
+                break;
+            case 'mention':
+                await mentionCommand.execute(interaction);
+                break;
+            case 'recruitment':
+                await recruitmentCommand.execute(interaction);
+                break;
+            case 'alldelete':
+                await alldeleteCommand.execute(interaction);
+                break;
+            case 'ban':
+                await banCommand.execute(interaction);
+                break;
+            case 'kick':
+                await kickCommand.execute(interaction);
+                break;
+            case 'role':
+                await roleCommand.execute(interaction);
+                break;
+            case 'softban':
+                await softbanCommand.execute(interaction);
+                break;
+            case 'timeout':
+                await timeoutCommand.execute(interaction);
+                break;
+            case 'geoquiz':
+                await geoquizCommand.execute(interaction);
+                break;
+        }
 
-// サイコロコマンドの処理
-async function handleRollCommand(interaction) {
-    const dice = interaction.options.getString('dice');
-    await handleMessageRoll(interaction);  // dirdice.js の handleMessageRoll を呼び出す
-}
+        // 🔽 points コマンド
+        const found = pointsCommands.find(cmd => cmd.data.name === commandName);
+        if (found) {
+            await found.execute(interaction);
+        }
 
-client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
-  
-    // メッセージ内にURL（メッセージリンク）が含まれているかチェック
-    const messageLinkRegex = /https:\/\/discord\.com\/channels\/(\d+)\/(\d+)\/(\d+)/g;
-    const matches = message.content.match(messageLinkRegex);
-  
-    if (matches) {
-        for (const match of matches) {
-            const [fullMatch, guildId, channelId, messageId] = match.match(messageLinkRegex);
-  
-            try {
-                // メッセージを取得
-                const channel = await client.channels.fetch(channelId);
-                const targetMessage = await channel.messages.fetch(messageId);
-  
-                // 埋め込みメッセージを作成
-                const embed = new MessageEmbed()
-                    .setTitle(`メッセージ内容`)
-                    .setDescription(targetMessage.content)
-                    .addField('送信者', targetMessage.author.tag, true)
-                    .addField('送信日時', targetMessage.createdAt.toLocaleString(), true)
-                    .setColor('#00ff00')
-                    .setTimestamp(targetMessage.createdAt);
-  
-                // 埋め込みメッセージを送信
-                message.reply({ embeds: [embed] });
-            } catch (error) {
-                if (error.message === 'Unknown Message') {
-                    message.reply('指定されたメッセージは削除されたため、表示できませんでした。');
-                } else if (error.message.includes('Missing Access')) {
-                    message.reply('指定されたメッセージを取得するための権限がありません。');
-                } else {
-                    message.reply('メッセージを取得する際に予期しないエラーが発生しました。' );
-                    console.error('メッセージ取得エラー:', error);
-                }
-            }
+        // ログ送信
+        await logToSheets({
+            serverId: interaction.guildId,
+            userId: interaction.user.id,
+            channelId: interaction.channelId,
+            level: "INFO",
+            timestamp: interaction.createdAt.toISOString(),
+            cmd: interaction.commandName,
+            message: "Slash command executed",
+        });
+    } catch (err) {
+        console.error(`❌ コマンド実行エラー: ${commandName}`, err);
+        if (!interaction.replied) {
+            await interaction.reply({ content: '⚠️ エラーが発生しました。', ephemeral: true });
         }
     }
-    await logToSheets({
-        serverId: message.guildId,
-        userId: message.author.id,
-        channelId: message.channelId,
-        level: "INFO",
-        timestamp: message.createdAt.toISOString(),  // 呼び出し元の timestamp
-        cmd: "message",
-        message: message.content,
-    });
 });
 
-// メッセージ処理（通常メッセージで「ping」に反応）
+// ==========================
+// 📂 メッセージイベント
+// ==========================
 client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;  // ボットメッセージを無視
+    if (message.author.bot) return;
 
-    // スラッシュコマンドのメッセージは無視
-    if (message.content.startsWith('/')) return;
-
+    // 「ping」に反応
     if (message.content.toLowerCase() === 'ping') {
-        // 通常メッセージで「ping」に反応
         await message.reply('🏓 Pong!');
     }
+
+    // ( ´◔‸◔`) 顔文字反応
     const faceRegexTuna = /\(\s?´◔‸◔`\s?\)/;
     if (faceRegexTuna.test(message.content)) {
         const replies = [
@@ -215,45 +193,30 @@ client.on('messageCreate', async (message) => {
         const randomReply = replies[Math.floor(Math.random() * replies.length)];
         await message.reply(randomReply);
     }
-    
+
+    // ダイスコマンド
     const dicePattern = /(dd\d+|(\d+)d(\d+))/i;
-    const match = message.content.match(dicePattern);
-
-    if (match) {
-        await handleMessageRoll(message);  // dirdice.js の handleMessageRoll を呼び出す
+    if (dicePattern.test(message.content)) {
+        await handleMessageRoll(message);
     }
-});
 
-// エラーハンドリング
-client.on('error', (error) => {
-    console.error('❌ Discord クライアントエラー:', error);
-});
-
-if (!process.env.DISCORD_TOKEN) {
-    console.error('❌ DISCORD_TOKEN が .env ファイルに設定されていません！');
-    process.exit(1);
-}
-
-// プロセス終了時の処理
-process.on('SIGINT', () => {
-    console.log('🛑 Botを終了しています...');
-    client.destroy();
-    process.exit(0);
-});
-
-// Discord にログイン
-console.log('🔑 Discord Token (最初の5文字だけ表示):', process.env.DISCORD_TOKEN?.slice(0, 5));
-
-client.login(process.env.DISCORD_TOKEN)
-    .catch(error => {
-        console.error('❌ Discord にログイン失敗:', error);
-        process.exit(1);
+    // ログ送信
+    await logToSheets({
+        serverId: message.guildId,
+        userId: message.author.id,
+        channelId: message.channelId,
+        level: "INFO",
+        timestamp: message.createdAt.toISOString(),
+        cmd: "message",
+        message: message.content,
     });
+});
 
+// ==========================
+// 📂 起動処理
+// ==========================
 client.once('ready', () => {
-    console.log(`✅ Discord にログイン成功しました！`);
-    console.log(`🎉 ${client.user.tag} が正常に起動しました！`);
-    console.log(`📊 ${client.guilds.cache.size} つのサーバーに参加中`);
+    console.log(`✅ Discord にログイン成功: ${client.user.tag}`);
     logToSheets({
         serverId: "system",
         userId: "system",
@@ -265,7 +228,17 @@ client.once('ready', () => {
     });
 });
 
-// Express Webサーバーの設定（Render用）
+// Discord にログイン
+if (!process.env.DISCORD_TOKEN) {
+    console.error('❌ DISCORD_TOKEN が設定されていません');
+    process.exit(1);
+}
+
+client.login(process.env.DISCORD_TOKEN);
+
+// ==========================
+// 📂 Express Web サーバー
+// ==========================
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -273,10 +246,10 @@ app.get('/', (req, res) => {
     res.json({
         status: 'Bot is running! 🤖',
         uptime: process.uptime(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     });
 });
 
 app.listen(port, () => {
-    console.log(`🌐 Web サーバーがポート ${port} で起動しました`);
+    console.log(`🌐 Web サーバー起動: http://localhost:${port}`);
 });
