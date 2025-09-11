@@ -133,8 +133,8 @@ async function showRollingEmbed(message, diceResultCallback, originalDiceText) {
 
     const rollingMessage = await message.reply({ embeds: [rollingEmbed] });
 
-    const maxRoll = 100;  // 表示用に汎用的に
-    const rollingStages = 15;
+    const maxRoll = 1000;  // 表示用に汎用的に
+    const rollingStages = 3;
 
     for (let i = 0; i < rollingStages; i++) {
         const randomRoll = Math.floor(Math.random() * maxRoll) + 1;
