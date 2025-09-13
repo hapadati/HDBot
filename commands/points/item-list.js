@@ -233,18 +233,23 @@ export async function handleComponent(interaction) {
       try {
         console.log("[handleComponent] starting transaction");
         await db.runTransaction(async t => {
-          const itemSnap = await t.get(itemRef);
+          // 📌 すべての読み取りを最初に行う
+          const [itemSnap, pointsSnap, userItemsSnap] = await Promise.all([
+            t.get(itemRef),
+            t.get(pointsRef),
+            t.get(userItemsRef),
+          ]);
+      
           console.log("[handleComponent] transaction item exists:", itemSnap.exists);
           if (!itemSnap.exists) throw new Error("ITEM_NOT_FOUND");
           const item = itemSnap.data();
           console.log("[handleComponent] transaction item data:", item);
-
+      
           if (item.stock < amount) {
             console.log("[handleComponent] OUT_OF_STOCK", item.stock, amount);
             throw new Error("OUT_OF_STOCK");
           }
-
-          const pointsSnap = await t.get(pointsRef);
+      
           const currentPoints = pointsSnap.exists ? pointsSnap.data().points : 0;
           console.log("[handleComponent] currentPoints:", currentPoints);
           const totalPrice = item.price * amount;
@@ -252,14 +257,18 @@ export async function handleComponent(interaction) {
             console.log("[handleComponent] INSUFFICIENT_POINTS", currentPoints, totalPrice);
             throw new Error("INSUFFICIENT_POINTS");
           }
-
-          t.update(itemRef, { stock: item.stock - amount });
-          t.set(pointsRef, { points: currentPoints - totalPrice }, { merge: true });
-
-          const userItemsSnap = await t.get(userItemsRef);
+      
           const userItems = userItemsSnap.exists ? userItemsSnap.data() : {};
           console.log("[handleComponent] updating userItems:", userItems);
-          t.set(userItemsRef, { ...userItems, [item.name]: (userItems[item.name] || 0) + amount }, { merge: true });
+      
+          // 📌 書き込みはここから
+          t.update(itemRef, { stock: item.stock - amount });
+          t.set(pointsRef, { points: currentPoints - totalPrice }, { merge: true });
+          t.set(
+            userItemsRef,
+            { ...userItems, [item.name]: (userItems[item.name] || 0) + amount },
+            { merge: true }
+          );
         });
         console.log("[handleComponent] transaction committed");
       } catch (err) {
