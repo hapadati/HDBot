@@ -107,72 +107,79 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 // 📂 Interaction 処理
 // ==========================
 client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isCommand()) return;
-
-    const { commandName } = interaction;
-
     try {
+      // スラッシュコマンドの処理
+      if (interaction.isChatInputCommand()) {
+        const { commandName } = interaction;
+  
         // 基本コマンド
         switch (commandName) {
-            case 'ping':
-                await pingCommand.execute(interaction);
-                break;
-            case 'おみくじ':
-                await omikujiCommand.execute(interaction);
-                break;
-            case 'mention':
-                await mentionCommand.execute(interaction);
-                break;
-            case 'recruitment':
-                await recruitmentCommand.execute(interaction);
-                break;
-            case 'alldelete':
-                await alldeleteCommand.execute(interaction);
-                break;
-            case 'ban':
-                await banCommand.execute(interaction);
-                break;
-            case 'kick':
-                await kickCommand.execute(interaction);
-                break;
-            case 'role':
-                await roleCommand.execute(interaction);
-                break;
-            case 'softban':
-                await softbanCommand.execute(interaction);
-                break;
-            case 'timeout':
-                await timeoutCommand.execute(interaction);
-                break;
-            case 'geoquiz':
-                await geoquizCommand.execute(interaction);
-                break;
+          case 'ping':
+            await pingCommand.execute(interaction);
+            break;
+          case 'おみくじ':
+            await omikujiCommand.execute(interaction);
+            break;
+          case 'mention':
+            await mentionCommand.execute(interaction);
+            break;
+          case 'recruitment':
+            await recruitmentCommand.execute(interaction);
+            break;
+          case 'alldelete':
+            await alldeleteCommand.execute(interaction);
+            break;
+          case 'ban':
+            await banCommand.execute(interaction);
+            break;
+          case 'kick':
+            await kickCommand.execute(interaction);
+            break;
+          case 'role':
+            await roleCommand.execute(interaction);
+            break;
+          case 'softban':
+            await softbanCommand.execute(interaction);
+            break;
+          case 'timeout':
+            await timeoutCommand.execute(interaction);
+            break;
+          case 'geoquiz':
+            await geoquizCommand.execute(interaction);
+            break;
         }
-
-        // 🔽 points コマンド
+  
+        // points コマンド
         const found = pointsCommands.find(cmd => cmd.data.name === commandName);
         if (found) {
-            await found.execute(interaction);
+          await found.execute(interaction);
         }
-
+  
         // ログ送信
         await logToSheets({
-            serverId: interaction.guildId,
-            userId: interaction.user.id,
-            channelId: interaction.channelId,
-            level: "INFO",
-            timestamp: interaction.createdAt.toISOString(),
-            cmd: interaction.commandName,
-            message: "Slash command executed",
+          serverId: interaction.guildId,
+          userId: interaction.user.id,
+          channelId: interaction.channelId,
+          level: "INFO",
+          timestamp: interaction.createdAt.toISOString(),
+          cmd: interaction.commandName,
+          message: "Slash command executed",
         });
+      }
+  
+      // 🔽 コンポーネント（ボタン・セレクト・モーダル）の処理を追加
+      if (interaction.isButton() || interaction.isStringSelectMenu() || interaction.isModalSubmit()) {
+        console.log("[interactionCreate] Component interaction detected:", interaction.customId);
+        await handleComponent(interaction);
+      }
     } catch (err) {
-        console.error(`❌ コマンド実行エラー: ${commandName}`, err);
-        if (!interaction.replied) {
-            await interaction.reply({ content: '⚠️ エラーが発生しました。', ephemeral: true });
-        }
+      console.error("❌ interactionCreate error:", err);
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ content: "⚠️ エラーが発生しました。", ephemeral: true });
+      }
     }
-});
-
+  });
+  
 // ==========================
 // 📂 メッセージイベント
 // ==========================
