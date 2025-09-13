@@ -15,7 +15,7 @@ export const data = new SlashCommandBuilder()
   .setName("item-list")
   .setDescription("アイテムショップと自分の持ち物を表示します");
 
-// 選択中のアイテムを保持
+// 選択中アイテムを保持
 const selectedItems = new Map();
 
 // --------------------
@@ -25,7 +25,6 @@ export async function execute(interaction) {
   const guildId = interaction.guildId;
   const userId = interaction.user.id;
 
-  // 長い処理がある場合は defer
   await interaction.deferReply();
 
   const { embed, rows } = await buildShopEmbed(guildId, interaction.guild.name, userId);
@@ -149,7 +148,6 @@ export async function handleComponent(interaction) {
         .setRequired(true);
 
       modal.addComponents(new ActionRowBuilder().addComponents(amountInput));
-
       return interaction.showModal(modal);
     }
   }
@@ -181,13 +179,13 @@ export async function handleComponent(interaction) {
     const pointsSnap = await pointsRef.get();
     const points = pointsSnap.exists ? pointsSnap.data().balance : 0;
     const totalPrice = item.price * amount;
+
     if (points < totalPrice) return interaction.followUp({ content: `❌ 所持ポイント不足 (${points}/${totalPrice}pt)`, ephemeral: true });
 
     // トランザクション
     await db.runTransaction(async t => {
       t.update(itemRef, { stock: item.stock - amount });
       t.set(pointsRef, { balance: points - totalPrice }, { merge: true });
-
       const userItemsRef = db.collection("servers").doc(guildId).collection("userItems").doc(userId);
       const userItemsSnap = await t.get(userItemsRef);
       const userItems = userItemsSnap.exists ? userItemsSnap.data() : {};
@@ -196,12 +194,8 @@ export async function handleComponent(interaction) {
 
     selectedItems.delete(userId);
 
+    await interaction.reply({ content: `✅ **${item.name}** を ${amount} 個購入しました！`, ephemeral: true });
     const { embed, rows } = await buildShopEmbed(guildId, interaction.guild.name, userId);
-    return interaction.followUp({
-      content: `✅ **${item.name}** を ${amount} 個購入しました！`,
-      embeds: [embed],
-      components: rows,
-      ephemeral: true,
-    });
+    return await interaction.followUp({ embeds: [embed], components: rows });
   }
 }
