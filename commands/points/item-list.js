@@ -3,6 +3,8 @@ import {
   EmbedBuilder,
   ActionRowBuilder,
   StringSelectMenuBuilder,
+  ButtonBuilder,
+  ButtonStyle,
 } from "discord.js";
 import { db } from "../../firestore.js";
 
@@ -26,17 +28,17 @@ export async function execute(interaction) {
   const row = new ActionRowBuilder().addComponents(menu);
 
   // 初期表示はショップ
-  const shopEmbed = await buildShopEmbed(guildId, interaction.guild.name);
+  const { embed, components } = await buildShopEmbed(guildId, interaction.guild.name, userId);
 
   await interaction.reply({
-    embeds: [shopEmbed],
-    components: [row],
-    ephemeral: false, // 全員に見せるなら false、自分だけなら true
+    embeds: [embed],
+    components: [row, ...components], // メニューと購入ボタン
+    ephemeral: false,
   });
 }
 
-// ショップ埋め込み
-async function buildShopEmbed(guildId, guildName) {
+// ショップ埋め込み + 購入ボタン
+async function buildShopEmbed(guildId, guildName, userId) {
   const snapshot = await db.collection("servers").doc(guildId).collection("items").get();
 
   const embed = new EmbedBuilder()
@@ -45,18 +47,27 @@ async function buildShopEmbed(guildId, guildName) {
 
   if (snapshot.empty) {
     embed.setDescription("📦 ショップにアイテムはまだ登録されていません。");
-    return embed;
+    return { embed, components: [] };
   }
 
   let desc = "";
+  const buttonRows = [];
+
   snapshot.forEach((doc) => {
     const item = doc.data();
-    // MIDも表示する
     desc += `**${item.name}** (ID: \`${item.mid}\`) — ${item.price}pt | 在庫: ${item.stock}\n`;
+
+    const button = new ButtonBuilder()
+      .setCustomId(`buy_${guildId}_${userId}_${item.mid}`)
+      .setLabel(`${item.name} を購入`)
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(item.stock <= 0);
+
+    buttonRows.push(new ActionRowBuilder().addComponents(button));
   });
 
   embed.setDescription(desc);
-  return embed;
+  return { embed, components: buttonRows };
 }
 
 // 持ち物埋め込み
@@ -69,7 +80,6 @@ async function buildInventoryEmbed(guildId, userId, username) {
     .setTitle(`🎒 ${username} の持ち物`)
     .setColor("#FFD700");
 
-  // 「数量 > 0」のアイテムだけを残す
   const ownedItems = Object.entries(data).filter(([_, amount]) => amount > 0);
 
   if (ownedItems.length === 0) {
@@ -93,21 +103,52 @@ export async function handleSelect(interaction) {
 
   const [, guildId, userId] = interaction.customId.split("_");
 
-  // 他人が勝手に操作できないように
   if (interaction.user.id !== userId) {
-    await interaction.reply({
-      content: "❌ このメニューはあなたのものではありません。",
-      ephemeral: true,
-    });
+    await interaction.reply({ content: "❌ このメニューはあなたのものではありません。", ephemeral: true });
     return;
   }
 
   const selected = interaction.values[0];
   if (selected === "shop") {
-    const embed = await buildShopEmbed(guildId, interaction.guild.name);
-    await interaction.update({ embeds: [embed] });
+    const { embed, components } = await buildShopEmbed(guildId, interaction.guild.name, userId);
+    await interaction.update({ embeds: [embed], components: [interaction.message.components[0], ...components] });
   } else if (selected === "inventory") {
     const embed = await buildInventoryEmbed(guildId, userId, interaction.user.username);
-    await interaction.update({ embeds: [embed] });
+    await interaction.update({ embeds: [embed], components: [interaction.message.components[0]] }); // メニューのみ
   }
+}
+
+// 購入ボタン処理
+export async function handleButton(interaction) {
+  if (!interaction.isButton()) return;
+  if (!interaction.customId.startsWith("buy_")) return;
+
+  const [, guildId, userId, mid] = interaction.customId.split("_");
+
+  if (interaction.user.id !== userId) {
+    await interaction.reply({ content: "❌ このボタンはあなた専用です。", ephemeral: true });
+    return;
+  }
+
+  const itemRef = db.collection("servers").doc(guildId).collection("items").doc(mid);
+  const itemDoc = await itemRef.get();
+
+  if (!itemDoc.exists) {
+    await interaction.reply({ content: "❌ このアイテムは存在しません。", ephemeral: true });
+    return;
+  }
+
+  const item = itemDoc.data();
+  if (item.stock <= 0) {
+    await interaction.reply({ content: "❌ 在庫切れです。", ephemeral: true });
+    return;
+  }
+
+  // TODO: ポイント減算処理とユーザーインベントリ更新をここで実装する
+  await itemRef.update({ stock: item.stock - 1 });
+
+  await interaction.reply({
+    content: `✅ ${item.name} を購入しました！（残り在庫: ${item.stock - 1}）`,
+    ephemeral: true,
+  });
 }
