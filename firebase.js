@@ -14,6 +14,7 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
+console.log("Connected to Firestore project:", serviceAccount.project_id);
 
 // 👇 これを追加するのを忘れない！
 export { db };
