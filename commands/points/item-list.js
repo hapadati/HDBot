@@ -8,6 +8,7 @@ import {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
+  InteractionResponseFlags,
 } from "discord.js";
 import { db } from "../../firestore.js";
 
@@ -181,7 +182,7 @@ export async function handleComponent(interaction) {
       if (interaction.customId.startsWith("buy_confirm_")) {
         const mid = selectedItems.get(key);
         console.log("[handleComponent] buy_confirm pressed, mid:", mid);
-        if (!mid) return interaction.reply({ content: "❌ アイテムを選択してください。", ephemeral: true });
+        if (!mid) return interaction.reply({ content: "❌ アイテムを選択してください。", flags: InteractionResponseFlags.Ephemeral});
 
         const modal = new ModalBuilder()
           .setCustomId(`buy_modal_${guildId}_${userId}`)
@@ -201,7 +202,7 @@ export async function handleComponent(interaction) {
 
       if (interaction.customId.startsWith("buy_confirm_disabled_")) {
         console.log("[handleComponent] disabled buy button pressed");
-        return await interaction.reply({ content: "❌ 購入できるアイテムがありません。", ephemeral: true });
+        return await interaction.reply({ content: "❌ 購入できるアイテムがありません。", flags: InteractionResponseFlags.Ephemeral });
       }
     }
 
@@ -216,14 +217,14 @@ export async function handleComponent(interaction) {
     if (interaction.isModalSubmit() && interaction.customId.startsWith("buy_modal_")) {
       const mid = selectedItems.get(key);
       console.log("[handleComponent] modal submit, mid:", mid);
-      if (!mid) return await interaction.reply({ content: "❌ アイテムが選択されていません。", ephemeral: true });
+      if (!mid) return await interaction.reply({ content: "❌ アイテムが選択されていません。", flags: InteractionResponseFlags.Ephemeral });
 
       const raw = interaction.fields.getTextInputValue("amount");
       console.log("[handleComponent] modal amount input:", raw);
       const amount = parseInt(raw, 10);
       if (isNaN(amount) || amount <= 0) {
         console.log("[handleComponent] invalid amount:", raw);
-        return await interaction.reply({ content: "❌ 正しい数値を入力してください。", ephemeral: true });
+        return await interaction.reply({ content: "❌ 正しい数値を入力してください。", flags: InteractionResponseFlags.Ephemeral });
       }
 
       const itemRef = db.collection("servers").doc(guildId).collection("items").doc(mid);
@@ -274,37 +275,37 @@ export async function handleComponent(interaction) {
       } catch (err) {
         console.error("[handleComponent] purchase transaction error:", err);
         if (err.message === "ITEM_NOT_FOUND") {
-          return await interaction.reply({ content: "❌ アイテムが存在しません。", ephemeral: true });
+          return await interaction.reply({ content: "❌ アイテムが存在しません。", flags: InteractionResponseFlags.Ephemeral });
         }
         if (err.message === "OUT_OF_STOCK") {
           const latestSnap = await itemRef.get();
           const latestStock = latestSnap.exists ? latestSnap.data().stock : 0;
-          return await interaction.reply({ content: `❌ 在庫不足 (${latestStock}個)`, ephemeral: true });
+          return await interaction.reply({ content: `❌ 在庫不足 (${latestStock}個)`, flags: InteractionResponseFlags.Ephemeral });
         }
         if (err.message === "INSUFFICIENT_POINTS") {
           const pointsSnap = await pointsRef.get();
           const currentPoints = pointsSnap.exists ? pointsSnap.data().points : 0;
           const itemSnap = await itemRef.get();
           const totalPrice = itemSnap.exists ? itemSnap.data().price * amount : "？";
-          return await interaction.reply({ content: `❌ 所持ポイント不足 (${currentPoints}/${totalPrice}pt)`, ephemeral: true });
+          return await interaction.reply({ content: `❌ 所持ポイント不足 (${currentPoints}/${totalPrice}pt)`, flags: InteractionResponseFlags.Ephemeral });
         }
-        return await interaction.reply({ content: "❌ 購入処理中にエラーが発生しました。もう一度お試しください。", ephemeral: true });
+        return await interaction.reply({ content: "❌ 購入処理中にエラーが発生しました。もう一度お試しください。", flags: InteractionResponseFlags.Ephemeral });
       }
 
       selectedItems.delete(key);
       console.log("[handleComponent] deleted selectedItems key:", key);
 
-      await interaction.reply({ content: `✅ **${mid}** を ${amount} 個購入しました！`, ephemeral: true });
+      await interaction.reply({ content: `✅ **${mid}** を ${amount} 個購入しました！`, flags: InteractionResponseFlags.Ephemeral });
       const { embed, rows } = await buildShopEmbed(guildId, interaction.guild.name, userId);
       console.log("[handleComponent] sending followUp after purchase");
-      return await interaction.followUp({ embeds: [embed], components: rows, ephemeral: true });
+      return await interaction.followUp({ embeds: [embed], components: rows, flags: InteractionResponseFlags.Ephemeral });
     }
   } catch (err) {
     console.error("[handleComponent] CATCH error:", err);
     if (!interaction.replied && !interaction.deferred) {
-      return await interaction.reply({ content: "❌ 内部エラーが発生しました。", ephemeral: true });
+      return await interaction.reply({ content: "❌ 内部エラーが発生しました。", flags: InteractionResponseFlags.Ephemeral });
     } else {
-      return await interaction.followUp({ content: "❌ 内部エラーが発生しました。", ephemeral: true });
+      return await interaction.followUp({ content: "❌ 内部エラーが発生しました。", flags: InteractionResponseFlags.Ephemeral });
     }
   }
 }
