@@ -1,4 +1,5 @@
-import {
+import pkg from 'discord.js';
+const {
   SlashCommandBuilder,
   EmbedBuilder,
   ActionRowBuilder,
@@ -8,8 +9,8 @@ import {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
-  InteractionResponseFlags,
-} from "discord.js";
+  InteractionResponseFlags, // ← ここ
+} = pkg;
 import { db } from "../../firestore.js";
 
 export const data = new SlashCommandBuilder()
