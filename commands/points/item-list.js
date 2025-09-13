@@ -21,12 +21,15 @@ const selectedItems = new Map();
 // Slash コマンド実行
 // --------------------
 export async function execute(interaction) {
+  console.log("[execute] called by", interaction.user.tag, "in guild", interaction.guildId);
   const guildId = interaction.guildId;
   const userId = interaction.user.id;
 
   await interaction.deferReply();
+  console.log("[execute] deferred reply");
 
-  const { embed, rows } = await buildShopEmbed(guildId, interaction.guild.name, userId);
+  const { embed, rows } = await buildShopEmbed(guildId, interaction.guild?.name ?? "?", userId);
+  console.log("[execute] buildShopEmbed finished, rows:", rows.length);
   await interaction.followUp({ embeds: [embed], components: rows });
 }
 
@@ -34,12 +37,16 @@ export async function execute(interaction) {
 // ショップ embed 作成
 // --------------------
 async function buildShopEmbed(guildId, guildName, userId) {
+  console.log("[buildShopEmbed] start for guild:", guildId, "guildName:", guildName, "user:", userId);
   const snapshot = await db.collection("servers").doc(guildId).collection("items").get();
+  console.log("[buildShopEmbed] snapshot size:", snapshot.size);
+
   const embed = new EmbedBuilder()
     .setTitle(`🛒 ${guildName} ショップ`)
     .setColor("#00BFFF");
 
   if (snapshot.empty) {
+    console.log("[buildShopEmbed] no items in shop");
     embed.setDescription("📦 ショップにアイテムはまだ登録されていません。");
     return { embed, rows: [buildToggleRow()] };
   }
@@ -49,8 +56,8 @@ async function buildShopEmbed(guildId, guildName, userId) {
 
   snapshot.forEach(doc => {
     const item = doc.data();
-    // doc.id が mid で登録されている想定。もし mid が別フィールドなら doc.id を使うなど調整してください。
     const mid = item.mid ?? doc.id;
+    console.log("[buildShopEmbed] found item:", item.name, "mid:", mid, "price:", item.price, "stock:", item.stock);
     desc += `**${item.name}** (ID: \`${mid}\`) — ${item.price}pt | 在庫: ${item.stock}\n`;
     if (item.stock > 0) {
       options.push({
@@ -63,12 +70,11 @@ async function buildShopEmbed(guildId, guildName, userId) {
 
   embed.setDescription(desc || " ");
 
-  // Discord のセレクトは最大 25 オプション
   const limitedOptions = options.slice(0, 25);
-
   const rows = [];
 
   if (limitedOptions.length > 0) {
+    console.log("[buildShopEmbed] options available:", limitedOptions.length);
     const rowSelect = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId(`buy_select_${guildId}_${userId}`)
@@ -85,7 +91,7 @@ async function buildShopEmbed(guildId, guildName, userId) {
     );
     rows.push(rowBuy);
   } else {
-    // 購入可能アイテムが無い場合は購入ボタンを無効化して表示（セレクトは出さない）
+    console.log("[buildShopEmbed] no purchasable options");
     const rowBuyDisabled = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`buy_confirm_disabled_${guildId}_${userId}`)
@@ -97,6 +103,7 @@ async function buildShopEmbed(guildId, guildName, userId) {
   }
 
   rows.push(buildToggleRow());
+  console.log("[buildShopEmbed] returning rows:", rows.length);
   return { embed, rows };
 }
 
@@ -104,12 +111,15 @@ async function buildShopEmbed(guildId, guildName, userId) {
 // 持ち物 embed 作成
 // --------------------
 async function buildInventoryEmbed(guildId, userId, username) {
+  console.log("[buildInventoryEmbed] start for user:", userId, "guild:", guildId);
   const ref = db.collection("servers").doc(guildId).collection("userItems").doc(userId);
   const snap = await ref.get();
+  console.log("[buildInventoryEmbed] userItems exists:", snap.exists);
   const data = snap.exists ? snap.data() : {};
 
   const pointsSnap = await db.collection("servers").doc(guildId).collection("points").doc(userId).get();
   const points = pointsSnap.exists ? pointsSnap.data().balance : 0;
+  console.log("[buildInventoryEmbed] points:", points);
 
   const embed = new EmbedBuilder()
     .setTitle(`🎒 ${username} の持ち物`)
@@ -118,6 +128,7 @@ async function buildInventoryEmbed(guildId, userId, username) {
 
   let desc = "";
   for (const [item, amount] of Object.entries(data)) {
+    console.log("[buildInventoryEmbed] item:", item, "amount:", amount);
     if (amount > 0) desc += `**${item}** × ${amount}\n`;
   }
   embed.setDescription(desc || "❌ アイテムを持っていません。");
@@ -129,6 +140,7 @@ async function buildInventoryEmbed(guildId, userId, username) {
 // 切り替えボタン
 // --------------------
 function buildToggleRow() {
+  console.log("[buildToggleRow] called");
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId("toggle_shop").setLabel("🛒 ショップへ").setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId("toggle_inventory").setLabel("🎒 持ち物へ").setStyle(ButtonStyle.Secondary)
@@ -139,6 +151,12 @@ function buildToggleRow() {
 // コンポーネント処理
 // --------------------
 export async function handleComponent(interaction) {
+  console.log("[handleComponent] fired:", interaction.customId,
+    "type:",
+    interaction.isButton() ? "button" :
+    interaction.isStringSelectMenu() ? "select" :
+    interaction.isModalSubmit() ? "modal" : "unknown");
+
   const guildId = interaction.guildId;
   const userId = interaction.user.id;
   const key = `${guildId}_${userId}`;
@@ -146,18 +164,23 @@ export async function handleComponent(interaction) {
   try {
     // ---------- ボタン ----------
     if (interaction.isButton()) {
+      console.log("[handleComponent] button pressed:", interaction.customId);
+
       if (interaction.customId === "toggle_shop") {
         const { embed, rows } = await buildShopEmbed(guildId, interaction.guild.name, userId);
+        console.log("[handleComponent] toggle_shop updating message");
         return await interaction.update({ embeds: [embed], components: rows });
       }
 
       if (interaction.customId === "toggle_inventory") {
         const { embed, rows } = await buildInventoryEmbed(guildId, userId, interaction.user.username);
+        console.log("[handleComponent] toggle_inventory updating message");
         return await interaction.update({ embeds: [embed], components: rows });
       }
 
       if (interaction.customId.startsWith("buy_confirm_")) {
         const mid = selectedItems.get(key);
+        console.log("[handleComponent] buy_confirm pressed, mid:", mid);
         if (!mid) return interaction.reply({ content: "❌ アイテムを選択してください。", ephemeral: true });
 
         const modal = new ModalBuilder()
@@ -172,18 +195,19 @@ export async function handleComponent(interaction) {
           .setRequired(true);
 
         modal.addComponents(new ActionRowBuilder().addComponents(amountInput));
+        console.log("[handleComponent] showing modal");
         return await interaction.showModal(modal);
       }
 
-      // 無効化された購入ボタンが押された場合（ただの保険）
       if (interaction.customId.startsWith("buy_confirm_disabled_")) {
+        console.log("[handleComponent] disabled buy button pressed");
         return await interaction.reply({ content: "❌ 購入できるアイテムがありません。", ephemeral: true });
       }
     }
 
     // ---------- セレクト ----------
     if (interaction.isStringSelectMenu() && interaction.customId.startsWith("buy_select_")) {
-      // ここは deferUpdate で UI のままにする（選択は Map に保持）
+      console.log("[handleComponent] select menu value:", interaction.values);
       selectedItems.set(key, interaction.values[0]);
       return await interaction.deferUpdate();
     }
@@ -191,45 +215,59 @@ export async function handleComponent(interaction) {
     // ---------- モーダル ----------
     if (interaction.isModalSubmit() && interaction.customId.startsWith("buy_modal_")) {
       const mid = selectedItems.get(key);
+      console.log("[handleComponent] modal submit, mid:", mid);
       if (!mid) return await interaction.reply({ content: "❌ アイテムが選択されていません。", ephemeral: true });
 
       const raw = interaction.fields.getTextInputValue("amount");
+      console.log("[handleComponent] modal amount input:", raw);
       const amount = parseInt(raw, 10);
-      if (isNaN(amount) || amount <= 0) return await interaction.reply({ content: "❌ 正しい数値を入力してください。", ephemeral: true });
+      if (isNaN(amount) || amount <= 0) {
+        console.log("[handleComponent] invalid amount:", raw);
+        return await interaction.reply({ content: "❌ 正しい数値を入力してください。", ephemeral: true });
+      }
 
       const itemRef = db.collection("servers").doc(guildId).collection("items").doc(mid);
       const pointsRef = db.collection("servers").doc(guildId).collection("points").doc(userId);
       const userItemsRef = db.collection("servers").doc(guildId).collection("userItems").doc(userId);
 
-      // トランザクション：ここで最新の在庫・所持ポイントを取得して検証・更新する
       try {
+        console.log("[handleComponent] starting transaction");
         await db.runTransaction(async t => {
           const itemSnap = await t.get(itemRef);
+          console.log("[handleComponent] transaction item exists:", itemSnap.exists);
           if (!itemSnap.exists) throw new Error("ITEM_NOT_FOUND");
           const item = itemSnap.data();
+          console.log("[handleComponent] transaction item data:", item);
 
-          if (item.stock < amount) throw new Error("OUT_OF_STOCK");
+          if (item.stock < amount) {
+            console.log("[handleComponent] OUT_OF_STOCK", item.stock, amount);
+            throw new Error("OUT_OF_STOCK");
+          }
 
           const pointsSnap = await t.get(pointsRef);
           const currentPoints = pointsSnap.exists ? pointsSnap.data().balance : 0;
+          console.log("[handleComponent] currentPoints:", currentPoints);
           const totalPrice = item.price * amount;
-          if (currentPoints < totalPrice) throw new Error("INSUFFICIENT_POINTS");
+          if (currentPoints < totalPrice) {
+            console.log("[handleComponent] INSUFFICIENT_POINTS", currentPoints, totalPrice);
+            throw new Error("INSUFFICIENT_POINTS");
+          }
 
-          // 更新処理
           t.update(itemRef, { stock: item.stock - amount });
           t.set(pointsRef, { balance: currentPoints - totalPrice }, { merge: true });
 
           const userItemsSnap = await t.get(userItemsRef);
           const userItems = userItemsSnap.exists ? userItemsSnap.data() : {};
+          console.log("[handleComponent] updating userItems:", userItems);
           t.set(userItemsRef, { ...userItems, [item.name]: (userItems[item.name] || 0) + amount }, { merge: true });
         });
+        console.log("[handleComponent] transaction committed");
       } catch (err) {
-        // トランザクション内で検出されたエラーのハンドリング
+        console.error("[handleComponent] purchase transaction error:", err);
         if (err.message === "ITEM_NOT_FOUND") {
           return await interaction.reply({ content: "❌ アイテムが存在しません。", ephemeral: true });
         }
         if (err.message === "OUT_OF_STOCK") {
-          // 在庫不足は最新在庫を読み直してユーザーに知らせる
           const latestSnap = await itemRef.get();
           const latestStock = latestSnap.exists ? latestSnap.data().stock : 0;
           return await interaction.reply({ content: `❌ 在庫不足 (${latestStock}個)`, ephemeral: true });
@@ -241,25 +279,22 @@ export async function handleComponent(interaction) {
           const totalPrice = itemSnap.exists ? itemSnap.data().price * amount : "？";
           return await interaction.reply({ content: `❌ 所持ポイント不足 (${currentPoints}/${totalPrice}pt)`, ephemeral: true });
         }
-
-        // 予期せぬエラー
-        console.error("purchase transaction error:", err);
         return await interaction.reply({ content: "❌ 購入処理中にエラーが発生しました。もう一度お試しください。", ephemeral: true });
       }
 
-      // 正常終了
       selectedItems.delete(key);
+      console.log("[handleComponent] deleted selectedItems key:", key);
 
       await interaction.reply({ content: `✅ **${mid}** を ${amount} 個購入しました！`, ephemeral: true });
       const { embed, rows } = await buildShopEmbed(guildId, interaction.guild.name, userId);
+      console.log("[handleComponent] sending followUp after purchase");
       return await interaction.followUp({ embeds: [embed], components: rows, ephemeral: true });
     }
   } catch (err) {
-    console.error("handleComponent error:", err);
+    console.error("[handleComponent] CATCH error:", err);
     if (!interaction.replied && !interaction.deferred) {
       return await interaction.reply({ content: "❌ 内部エラーが発生しました。", ephemeral: true });
     } else {
-      // すでに deferred/replied の場合は followUp
       return await interaction.followUp({ content: "❌ 内部エラーが発生しました。", ephemeral: true });
     }
   }
