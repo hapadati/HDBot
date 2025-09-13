@@ -147,67 +147,68 @@ export async function handleComponent(interaction) {
       await interaction.showModal(modal);
     }
   }
+// --- セレクトメニュー ---
+else if (interaction.isStringSelectMenu() && interaction.customId.startsWith("buy_select_")) {
+  selectedItems.set(userId, interaction.values[0]);
+  await interaction.deferUpdate(); // ← reply ではなく deferUpdate に変更
+}
 
-  // --- セレクトメニュー ---
-  else if (interaction.isStringSelectMenu() && interaction.customId.startsWith("buy_select_")) {
-    selectedItems.set(userId, interaction.values[0]);
-    await interaction.deferUpdate();
+// --- モーダル送信 ---
+else if (interaction.isModalSubmit() && interaction.customId.startsWith("buy_modal_")) {
+  const mid = selectedItems.get(userId);
+  if (!mid) {
+    await interaction.reply({ content: "❌ 選択アイテムが見つかりません。", ephemeral: true });
+    return;
   }
 
-  // --- モーダル送信 ---
-  else if (interaction.isModalSubmit() && interaction.customId.startsWith("buy_modal_")) {
-    const mid = selectedItems.get(userId);
-    if (!mid) {
-      await interaction.reply({ content: "❌ 選択アイテムが見つかりません。", ephemeral: true });
-      return;
-    }
-
-    const amount = parseInt(interaction.fields.getTextInputValue("amount"));
-    if (isNaN(amount) || amount <= 0) {
-      await interaction.reply({ content: "❌ 正しい購入個数を入力してください。", ephemeral: true });
-      return;
-    }
-
-    const itemRef = db.collection("servers").doc(guildId).collection("items").doc(mid);
-    const itemSnap = await itemRef.get();
-    if (!itemSnap.exists) {
-      await interaction.reply({ content: "❌ アイテムが存在しません。", ephemeral: true });
-      return;
-    }
-
-    const item = itemSnap.data();
-    if (item.stock < amount) {
-      await interaction.reply({ content: `❌ 在庫が不足しています (${item.stock}個しかありません)。`, ephemeral: true });
-      return;
-    }
-
-    const pointsRef = db.collection("servers").doc(guildId).collection("points").doc(userId);
-    const pointsSnap = await pointsRef.get();
-    const points = pointsSnap.exists ? pointsSnap.data().balance : 0;
-    const totalPrice = item.price * amount;
-
-    if (points < totalPrice) {
-      await interaction.reply({ content: `❌ 所持ポイントが足りません。(${points}pt / ${totalPrice}pt)`, ephemeral: true });
-      return;
-    }
-
-    // --- トランザクション更新 ---
-    await db.runTransaction(async (t) => {
-      t.update(itemRef, { stock: item.stock - amount });
-      t.set(pointsRef, { balance: points - totalPrice }, { merge: true });
-
-      const userItemsRef = db.collection("servers").doc(guildId).collection("userItems").doc(userId);
-      const userItemsSnap = await t.get(userItemsRef);
-      const userItems = userItemsSnap.exists ? userItemsSnap.data() : {};
-      const newAmount = (userItems[item.name] || 0) + amount;
-      t.set(userItemsRef, { ...userItems, [item.name]: newAmount });
-    });
-
-    selectedItems.delete(userId);
-    await interaction.reply({ content: `✅ **${item.name}** を ${amount} 個購入しました！`, ephemeral: true });
-
-    // --- ショップ表示更新 ---
-    const { embed, rows } = await buildShopEmbed(guildId, interaction.guild.name, userId);
-    await interaction.followUp({ embeds: [embed], components: rows });
+  const amount = parseInt(interaction.fields.getTextInputValue("amount"));
+  if (isNaN(amount) || amount <= 0) {
+    await interaction.reply({ content: "❌ 正しい購入個数を入力してください。", ephemeral: true });
+    return;
   }
+
+  const itemRef = db.collection("servers").doc(guildId).collection("items").doc(mid);
+  const itemSnap = await itemRef.get();
+  if (!itemSnap.exists) {
+    await interaction.reply({ content: "❌ アイテムが存在しません。", ephemeral: true });
+    return;
+  }
+
+  const item = itemSnap.data();
+  if (item.stock < amount) {
+    await interaction.reply({ content: `❌ 在庫が不足しています (${item.stock}個しかありません)。`, ephemeral: true });
+    return;
+  }
+
+  const pointsRef = db.collection("servers").doc(guildId).collection("points").doc(userId);
+  const pointsSnap = await pointsRef.get();
+  const points = pointsSnap.exists ? pointsSnap.data().balance : 0;
+  const totalPrice = item.price * amount;
+
+  if (points < totalPrice) {
+    await interaction.reply({ content: `❌ 所持ポイントが足りません。(${points}pt / ${totalPrice}pt)`, ephemeral: true });
+    return;
+  }
+
+  // --- トランザクション更新 ---
+  await db.runTransaction(async (t) => {
+    t.update(itemRef, { stock: item.stock - amount });
+    t.set(pointsRef, { balance: points - totalPrice }, { merge: true });
+
+    const userItemsRef = db.collection("servers").doc(guildId).collection("userItems").doc(userId);
+    const userItemsSnap = await t.get(userItemsRef);
+    const userItems = userItemsSnap.exists ? userItemsSnap.data() : {};
+    const newAmount = (userItems[item.name] || 0) + amount;
+    t.set(userItemsRef, { ...userItems, [item.name]: newAmount });
+  });
+
+  selectedItems.delete(userId);
+
+  // ← ここは reply でモーダル送信に対する応答
+  await interaction.reply({ content: `✅ **${item.name}** を ${amount} 個購入しました！`, ephemeral: true });
+
+  // ショップ表示更新は followUp で送信
+  const { embed, rows } = await buildShopEmbed(guildId, interaction.guild.name, userId);
+  await interaction.followUp({ embeds: [embed], components: rows });
+}
 }
