@@ -17,12 +17,15 @@ export const data = new SlashCommandBuilder()
 
 const selectedItems = new Map();
 
+// --- コマンド実行 ---
 export async function execute(interaction) {
   const guildId = interaction.guildId;
   const userId = interaction.user.id;
 
+  await interaction.deferReply(); // 安全に acknowledgment
+
   const { embed, rows } = await buildShopEmbed(guildId, interaction.guild.name, userId);
-  await interaction.reply({ embeds: [embed], components: rows });
+  await interaction.followUp({ embeds: [embed], components: rows });
 }
 
 // --- ショップ表示 ---
@@ -39,7 +42,7 @@ async function buildShopEmbed(guildId, guildName, userId) {
 
   let desc = "";
   const options = [];
-  snapshot.forEach((doc) => {
+  snapshot.forEach(doc => {
     const item = doc.data();
     desc += `**${item.name}** (ID: \`${item.mid}\`) — ${item.price}pt | 在庫: ${item.stock}\n`;
     if (item.stock > 0) {
@@ -85,7 +88,7 @@ async function buildInventoryEmbed(guildId, userId, username) {
     .setFooter({ text: `所持ポイント: ${points}pt` });
 
   let desc = "";
-  for (const [item, amount] of Object.entries(data)) if(amount>0) desc += `**${item}** × ${amount}\n`;
+  for (const [item, amount] of Object.entries(data)) if (amount > 0) desc += `**${item}** × ${amount}\n`;
   embed.setDescription(desc || "❌ アイテムを持っていません。");
 
   return { embed, rows: [buildToggleRow()] };
@@ -104,7 +107,7 @@ export async function handleComponent(interaction) {
   const guildId = interaction.guildId;
   const userId = interaction.user.id;
 
-  // ボタン
+  // --- ボタン ---
   if (interaction.isButton()) {
     if (interaction.customId === "toggle_shop") {
       const { embed, rows } = await buildShopEmbed(guildId, interaction.guild.name, userId);
@@ -132,38 +135,40 @@ export async function handleComponent(interaction) {
     }
   }
 
-  // セレクト
+  // --- セレクトメニュー ---
   if (interaction.isStringSelectMenu() && interaction.customId.startsWith("buy_select_")) {
     selectedItems.set(userId, interaction.values[0]);
     return await interaction.deferUpdate();
   }
 
-  // モーダル送信
+  // --- モーダル送信 ---
   if (interaction.isModalSubmit() && interaction.customId.startsWith("buy_modal_")) {
+    await interaction.deferReply({ ephemeral: true }); // acknowledgment
+
     const mid = selectedItems.get(userId);
-    if (!mid) return await interaction.reply({ content: "❌ アイテムが選択されていません。", ephemeral: true });
+    if (!mid) return await interaction.followUp({ content: "❌ アイテムが選択されていません。", ephemeral: true });
 
     const amount = parseInt(interaction.fields.getTextInputValue("amount"));
-    if (isNaN(amount) || amount <= 0) return await interaction.reply({ content: "❌ 正しい数値を入力してください。", ephemeral: true });
+    if (isNaN(amount) || amount <= 0) return await interaction.followUp({ content: "❌ 正しい数値を入力してください。", ephemeral: true });
 
     const itemRef = db.collection("servers").doc(guildId).collection("items").doc(mid);
     const itemSnap = await itemRef.get();
-    if (!itemSnap.exists) return await interaction.reply({ content: "❌ アイテムが存在しません。", ephemeral: true });
+    if (!itemSnap.exists) return await interaction.followUp({ content: "❌ アイテムが存在しません。", ephemeral: true });
 
     const item = itemSnap.data();
-    if (item.stock < amount) return await interaction.reply({ content: `❌ 在庫不足 (${item.stock}個)`, ephemeral: true });
+    if (item.stock < amount) return await interaction.followUp({ content: `❌ 在庫不足 (${item.stock}個)`, ephemeral: true });
 
     const pointsRef = db.collection("servers").doc(guildId).collection("points").doc(userId);
     const pointsSnap = await pointsRef.get();
     const points = pointsSnap.exists ? pointsSnap.data().balance : 0;
     const totalPrice = item.price * amount;
+    if (points < totalPrice) return await interaction.followUp({ content: `❌ 所持ポイント不足 (${points}/${totalPrice}pt)`, ephemeral: true });
 
-    if (points < totalPrice) return await interaction.reply({ content: `❌ 所持ポイント不足 (${points}/${totalPrice}pt)`, ephemeral: true });
-
-    // トランザクション
+    // --- トランザクション ---
     await db.runTransaction(async t => {
       t.update(itemRef, { stock: item.stock - amount });
       t.set(pointsRef, { balance: points - totalPrice }, { merge: true });
+
       const userItemsRef = db.collection("servers").doc(guildId).collection("userItems").doc(userId);
       const userItemsSnap = await t.get(userItemsRef);
       const userItems = userItemsSnap.exists ? userItemsSnap.data() : {};
@@ -172,8 +177,7 @@ export async function handleComponent(interaction) {
 
     selectedItems.delete(userId);
 
-    await interaction.reply({ content: `✅ **${item.name}** を ${amount} 個購入しました！`, ephemeral: true });
     const { embed, rows } = await buildShopEmbed(guildId, interaction.guild.name, userId);
-    return await interaction.followUp({ embeds: [embed], components: rows });
+    return await interaction.followUp({ content: `✅ **${item.name}** を ${amount} 個購入しました！`, embeds: [embed], components: rows, ephemeral: true });
   }
 }
