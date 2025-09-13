@@ -25,40 +25,43 @@ export const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(0);
 
 export async function execute(interaction) {
-  const mid = interaction.options.getString('mid');
-  const name = interaction.options.getString('name');
-  const price = interaction.options.getInteger('price');
-  const stock = interaction.options.getInteger('stock');
-  const guildId = interaction.guildId;
+  await interaction.deferReply({ ephemeral: true }); // 先に応答確保
 
-  // 英数字チェック
-  if (!/^[a-zA-Z0-9]+$/.test(mid)) {
-    await interaction.reply({
-      content: '❌ MIDは英数字のみ指定してください。',
-      ephemeral: true,
+  try {
+    const mid = interaction.options.getString('mid');
+    const name = interaction.options.getString('name');
+    const price = interaction.options.getInteger('price');
+    const stock = interaction.options.getInteger('stock');
+    const guildId = interaction.guildId;
+
+    // MIDの英数字チェック
+    if (!/^[a-zA-Z0-9]+$/.test(mid)) {
+      await interaction.editReply('❌ MIDは英数字のみ指定してください。');
+      return;
+    }
+
+    const ref = db.collection('servers').doc(guildId).collection('items').doc(mid);
+    const doc = await ref.get();
+
+    if (doc.exists) {
+      await interaction.editReply(
+        `❌ MID \`${mid}\` のアイテムはすでに存在します。別のIDを指定してください。`
+      );
+      return;
+    }
+
+    await ref.set({
+      mid,
+      name,
+      price,
+      stock,
     });
-    return;
+
+    await interaction.editReply(
+      `🛒 アイテム **${name}** を追加しました！\nID: \`${mid}\`, 価格: ${price}pt, 在庫: ${stock}`
+    );
+  } catch (err) {
+    console.error('item-add Error:', err);
+    await interaction.editReply('⚠️ エラーが発生しました。');
   }
-
-  const ref = db.collection('servers').doc(guildId).collection('items').doc(mid);
-
-  const doc = await ref.get();
-  if (doc.exists) {
-    await interaction.reply({
-      content: `❌ MID \`${mid}\` のアイテムはすでに存在します。別のIDを指定してください。`,
-      ephemeral: true,
-    });
-    return;
-  }
-
-  await ref.set({
-    mid,
-    name,
-    price,
-    stock,
-  });
-
-  await interaction.reply(
-    `🛒 アイテム **${name}** を追加しました！\nID: \`${mid}\`, 価格: ${price}pt, 在庫: ${stock}`
-  );
 }
