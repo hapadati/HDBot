@@ -14,7 +14,13 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-console.log("Connected to Firestore project:", serviceAccount.project_id);
+console.log("✅ Firestore initialized with project:", serviceAccount.project_id);
 
+try {
+  await db.collection("debug").doc("ping").set({ ok: true, time: Date.now() });
+  console.log("✅ Firestore write test succeeded");
+} catch (err) {
+  console.error("❌ Firestore write test failed", err);
+}
 // 👇 これを追加するのを忘れない！
 export { db };
