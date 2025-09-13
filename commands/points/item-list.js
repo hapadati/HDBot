@@ -15,22 +15,29 @@ export const data = new SlashCommandBuilder()
   .setName("item-list")
   .setDescription("アイテムショップと自分の持ち物を表示します");
 
+// 選択中のアイテムを保持
 const selectedItems = new Map();
 
-// --- コマンド実行 ---
+// --------------------
+// Slash コマンド実行
+// --------------------
 export async function execute(interaction) {
   const guildId = interaction.guildId;
   const userId = interaction.user.id;
 
-  await interaction.deferReply(); // 安全に acknowledgment
+  // 長い処理がある場合は defer
+  await interaction.deferReply();
 
   const { embed, rows } = await buildShopEmbed(guildId, interaction.guild.name, userId);
   await interaction.followUp({ embeds: [embed], components: rows });
 }
 
-// --- ショップ表示 ---
+// --------------------
+// ショップ embed 作成
+// --------------------
 async function buildShopEmbed(guildId, guildName, userId) {
   const snapshot = await db.collection("servers").doc(guildId).collection("items").get();
+
   const embed = new EmbedBuilder()
     .setTitle(`🛒 ${guildName} ショップ`)
     .setColor("#00BFFF");
@@ -42,6 +49,7 @@ async function buildShopEmbed(guildId, guildName, userId) {
 
   let desc = "";
   const options = [];
+
   snapshot.forEach(doc => {
     const item = doc.data();
     desc += `**${item.name}** (ID: \`${item.mid}\`) — ${item.price}pt | 在庫: ${item.stock}\n`;
@@ -73,7 +81,9 @@ async function buildShopEmbed(guildId, guildName, userId) {
   return { embed, rows: [rowSelect, rowBuy, buildToggleRow()] };
 }
 
-// --- 持ち物表示 ---
+// --------------------
+// 持ち物 embed 作成
+// --------------------
 async function buildInventoryEmbed(guildId, userId, username) {
   const ref = db.collection("servers").doc(guildId).collection("userItems").doc(userId);
   const snap = await ref.get();
@@ -94,7 +104,9 @@ async function buildInventoryEmbed(guildId, userId, username) {
   return { embed, rows: [buildToggleRow()] };
 }
 
-// --- 切り替えボタン ---
+// --------------------
+// 切替ボタン
+// --------------------
 function buildToggleRow() {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId("toggle_shop").setLabel("🛒 ショップへ").setStyle(ButtonStyle.Primary),
@@ -102,22 +114,28 @@ function buildToggleRow() {
   );
 }
 
-// --- コンポーネント処理 ---
+// --------------------
+// コンポーネント処理
+// --------------------
 export async function handleComponent(interaction) {
   const guildId = interaction.guildId;
   const userId = interaction.user.id;
 
-  // --- ボタン ---
+  // ---------- ボタン ----------
   if (interaction.isButton()) {
     if (interaction.customId === "toggle_shop") {
       const { embed, rows } = await buildShopEmbed(guildId, interaction.guild.name, userId);
       return await interaction.update({ embeds: [embed], components: rows });
-    } else if (interaction.customId === "toggle_inventory") {
+    }
+
+    if (interaction.customId === "toggle_inventory") {
       const { embed, rows } = await buildInventoryEmbed(guildId, userId, interaction.user.username);
       return await interaction.update({ embeds: [embed], components: rows });
-    } else if (interaction.customId.startsWith("buy_confirm_")) {
+    }
+
+    if (interaction.customId.startsWith("buy_confirm_")) {
       const mid = selectedItems.get(userId);
-      if (!mid) return await interaction.reply({ content: "❌ アイテムを選択してください。", ephemeral: true });
+      if (!mid) return interaction.reply({ content: "❌ アイテムを選択してください。", ephemeral: true });
 
       const modal = new ModalBuilder()
         .setCustomId(`buy_modal_${guildId}_${userId}`)
@@ -131,40 +149,41 @@ export async function handleComponent(interaction) {
         .setRequired(true);
 
       modal.addComponents(new ActionRowBuilder().addComponents(amountInput));
-      return await interaction.showModal(modal);
+
+      return interaction.showModal(modal);
     }
   }
 
-  // --- セレクトメニュー ---
+  // ---------- セレクト ----------
   if (interaction.isStringSelectMenu() && interaction.customId.startsWith("buy_select_")) {
     selectedItems.set(userId, interaction.values[0]);
     return await interaction.deferUpdate();
   }
 
-  // --- モーダル送信 ---
+  // ---------- モーダル ----------
   if (interaction.isModalSubmit() && interaction.customId.startsWith("buy_modal_")) {
-    await interaction.deferReply({ ephemeral: true }); // acknowledgment
+    await interaction.deferReply({ ephemeral: true });
 
     const mid = selectedItems.get(userId);
-    if (!mid) return await interaction.followUp({ content: "❌ アイテムが選択されていません。", ephemeral: true });
+    if (!mid) return interaction.followUp({ content: "❌ アイテムが選択されていません。", ephemeral: true });
 
     const amount = parseInt(interaction.fields.getTextInputValue("amount"));
-    if (isNaN(amount) || amount <= 0) return await interaction.followUp({ content: "❌ 正しい数値を入力してください。", ephemeral: true });
+    if (isNaN(amount) || amount <= 0) return interaction.followUp({ content: "❌ 正しい数値を入力してください。", ephemeral: true });
 
     const itemRef = db.collection("servers").doc(guildId).collection("items").doc(mid);
     const itemSnap = await itemRef.get();
-    if (!itemSnap.exists) return await interaction.followUp({ content: "❌ アイテムが存在しません。", ephemeral: true });
+    if (!itemSnap.exists) return interaction.followUp({ content: "❌ アイテムが存在しません。", ephemeral: true });
 
     const item = itemSnap.data();
-    if (item.stock < amount) return await interaction.followUp({ content: `❌ 在庫不足 (${item.stock}個)`, ephemeral: true });
+    if (item.stock < amount) return interaction.followUp({ content: `❌ 在庫不足 (${item.stock}個)`, ephemeral: true });
 
     const pointsRef = db.collection("servers").doc(guildId).collection("points").doc(userId);
     const pointsSnap = await pointsRef.get();
     const points = pointsSnap.exists ? pointsSnap.data().balance : 0;
     const totalPrice = item.price * amount;
-    if (points < totalPrice) return await interaction.followUp({ content: `❌ 所持ポイント不足 (${points}/${totalPrice}pt)`, ephemeral: true });
+    if (points < totalPrice) return interaction.followUp({ content: `❌ 所持ポイント不足 (${points}/${totalPrice}pt)`, ephemeral: true });
 
-    // --- トランザクション ---
+    // トランザクション
     await db.runTransaction(async t => {
       t.update(itemRef, { stock: item.stock - amount });
       t.set(pointsRef, { balance: points - totalPrice }, { merge: true });
@@ -178,6 +197,11 @@ export async function handleComponent(interaction) {
     selectedItems.delete(userId);
 
     const { embed, rows } = await buildShopEmbed(guildId, interaction.guild.name, userId);
-    return await interaction.followUp({ content: `✅ **${item.name}** を ${amount} 個購入しました！`, embeds: [embed], components: rows, ephemeral: true });
+    return interaction.followUp({
+      content: `✅ **${item.name}** を ${amount} 個購入しました！`,
+      embeds: [embed],
+      components: rows,
+      ephemeral: true,
+    });
   }
 }
