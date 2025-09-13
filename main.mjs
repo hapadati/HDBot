@@ -40,6 +40,7 @@ import { roleCommand } from './commands/manage/role.js';
 import { softbanCommand } from './commands/manage/softban.js';
 import { timeoutCommand } from './commands/manage/timeout.js';
 import { geoquizCommand } from './commands/utils/geoquiz.js';
+import { execute, handleComponent } from "./commands/points/item-list.js"; // パスは調整
 
 // 基本コマンド
 const rawCommands = [
@@ -53,6 +54,7 @@ const rawCommands = [
     softbanCommand,
     timeoutCommand,
     geoquizCommand,
+    handleComponent,
 ];
 
 // 📂 points コマンドの自動読み込み
