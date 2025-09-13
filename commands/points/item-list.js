@@ -118,7 +118,7 @@ async function buildInventoryEmbed(guildId, userId, username) {
   const data = snap.exists ? snap.data() : {};
 
   const pointsSnap = await db.collection("servers").doc(guildId).collection("points").doc(userId).get();
-  const points = pointsSnap.exists ? pointsSnap.data().balance : 0;
+  const points = pointsSnap.exists ? pointsSnap.data().points : 0;
   console.log("[buildInventoryEmbed] points:", points);
 
   const embed = new EmbedBuilder()
@@ -245,7 +245,7 @@ export async function handleComponent(interaction) {
           }
 
           const pointsSnap = await t.get(pointsRef);
-          const currentPoints = pointsSnap.exists ? pointsSnap.data().balance : 0;
+          const currentPoints = pointsSnap.exists ? pointsSnap.data().points : 0;
           console.log("[handleComponent] currentPoints:", currentPoints);
           const totalPrice = item.price * amount;
           if (currentPoints < totalPrice) {
@@ -254,7 +254,7 @@ export async function handleComponent(interaction) {
           }
 
           t.update(itemRef, { stock: item.stock - amount });
-          t.set(pointsRef, { balance: currentPoints - totalPrice }, { merge: true });
+          t.set(pointsRef, { points: currentPoints - totalPrice }, { merge: true });
 
           const userItemsSnap = await t.get(userItemsRef);
           const userItems = userItemsSnap.exists ? userItemsSnap.data() : {};
@@ -274,7 +274,7 @@ export async function handleComponent(interaction) {
         }
         if (err.message === "INSUFFICIENT_POINTS") {
           const pointsSnap = await pointsRef.get();
-          const currentPoints = pointsSnap.exists ? pointsSnap.data().balance : 0;
+          const currentPoints = pointsSnap.exists ? pointsSnap.data().points : 0;
           const itemSnap = await itemRef.get();
           const totalPrice = itemSnap.exists ? itemSnap.data().price * amount : "？";
           return await interaction.reply({ content: `❌ 所持ポイント不足 (${currentPoints}/${totalPrice}pt)`, ephemeral: true });
