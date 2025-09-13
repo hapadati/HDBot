@@ -28,7 +28,8 @@ export async function execute(interaction) {
   let rank = 1;
   snapshot.forEach(doc => {
     const data = doc.data();
-    desc += `**${rank}.** <@${doc.id}> — ${data.points}pt\n`;
+    const points = data.points ?? 0; // フィールドが無くても 0 として扱う
+    desc += `**${rank}.** <@${doc.id}> — ${points}pt\n`;
     rank++;
   });
 

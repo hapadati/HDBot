@@ -10,7 +10,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(true))
   .addBooleanOption(option =>
     option.setName('force')
-      .setDescription('在庫があっても強制削除するか (true/false)'))
+      .setDescription('在庫があっても強制削除するか (デフォルト: false)'))
   .setDefaultMemberPermissions(0);
 
 export async function execute(interaction) {
@@ -18,21 +18,35 @@ export async function execute(interaction) {
   const force = interaction.options.getBoolean('force') || false;
   const guildId = interaction.guildId;
 
-  const ref = db.collection('servers').doc(guildId).collection('items').doc(name);
-  const doc = await ref.get();
+  try {
+    // 名前で検索（ドキュメントIDに依存しない）
+    const snapshot = await db
+      .collection('servers')
+      .doc(guildId)
+      .collection('items')
+      .where('name', '==', name)
+      .limit(1)
+      .get();
 
-  if (!doc.exists) {
-    await interaction.reply('❌ 指定されたアイテムは存在しません。');
-    return;
+    if (snapshot.empty) {
+      await interaction.reply(`❌ アイテム **${name}** は存在しません。`);
+      return;
+    }
+
+    const doc = snapshot.docs[0];
+    const item = doc.data();
+
+    if (item.stock > 0 && !force) {
+      await interaction.reply(
+        `⚠️ **${item.name}** にはまだ在庫(${item.stock})があります。\n強制削除する場合は \`force: true\` を指定してください。`
+      );
+      return;
+    }
+
+    await doc.ref.delete();
+    await interaction.reply(`🗑️ アイテム **${item.name}** を削除しました。`);
+  } catch (error) {
+    console.error('アイテム削除エラー:', error);
+    await interaction.reply('❌ アイテム削除中にエラーが発生しました。');
   }
-
-  const item = doc.data();
-
-  if (item.stock > 0 && !force) {
-    await interaction.reply(`⚠️ ${item.name} にはまだ在庫(${item.stock})があります。強制削除する場合は \`force: true\` を指定してください。`);
-    return;
-  }
-
-  await ref.delete();
-  await interaction.reply(`🗑️ アイテム **${name}** を削除しました。`);
 }

@@ -16,15 +16,32 @@ export const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(0); // 管理者専用
 
 export async function execute(interaction) {
+  // すぐに応答を延期してタイムアウト防止
+  await interaction.deferReply({ ephemeral: true });
+
   const target = interaction.options.getUser('user');
   const amount = interaction.options.getInteger('amount');
   const guildId = interaction.guildId;
 
-  const ref = db.collection('servers').doc(guildId).collection('points').doc(target.id);
-  const doc = await ref.get();
-  const current = doc.exists ? doc.data().points : 0;
+  if (!guildId) {
+    return interaction.editReply("❌ このコマンドはサーバー内でのみ使用できます。");
+  }
 
-  await ref.set({ points: current + amount }, { merge: true });
+  try {
+    const ref = db.collection('servers').doc(guildId).collection('points').doc(target.id);
+    const doc = await ref.get();
+    const current = doc.exists ? doc.data().points : 0;
 
-  await interaction.reply(`✅ ${target.username} に **${amount}pt** 追加しました！（合計: ${current + amount}pt）`);
+    await ref.set(
+      { points: current + amount },
+      { merge: true }
+    );
+
+    await interaction.editReply(
+      `✅ ${target.username} に **${amount}pt** 追加しました！（合計: ${current + amount}pt）`
+    );
+  } catch (err) {
+    console.error("Firestore error:", err);
+    await interaction.editReply("❌ データベース処理中にエラーが発生しました。");
+  }
 }
