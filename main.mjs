@@ -186,7 +186,7 @@ client.on('messageCreate', async (message) => {
     const faceRegexTuna = /\(\s?´◔‸◔`\s?\)/;
     if (faceRegexTuna.test(message.content)) {
         const replies = [
-            'つなしないよ、安知谷だけ見て！',
+            'つなしないよ、HDBotだけ見て！',
             '( ´◔‸◔`)👐まのﾎﾞﾝ',
             '( ´◔‸◔`)👐🌻',
         ];

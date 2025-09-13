@@ -123,9 +123,7 @@ function parseDiceExpression(dice) {
 
     return { baseDice, modifier };
 }
-
-// ダイスアニメーションの表示関数
-async function showRollingEmbed(message, diceResultCallback, originalDiceText) {
+async function showRollingEmbed(message, diceResultCallback, originalDiceText, minTotal, maxTotal) {
     const rollingEmbed = new EmbedBuilder()
         .setTitle(`${message.author.username} のサイコロ振り中...`)
         .setColor(0xffff00)
@@ -133,14 +131,13 @@ async function showRollingEmbed(message, diceResultCallback, originalDiceText) {
 
     const rollingMessage = await message.reply({ embeds: [rollingEmbed] });
 
-    const maxRoll = 100;  // 表示用に汎用的に
-    const rollingStages = 15;
+    const rollingStages = 3; // 3回アニメーション表示
 
     for (let i = 0; i < rollingStages; i++) {
-        const randomRoll = Math.floor(Math.random() * maxRoll) + 1;
-        rollingEmbed.setDescription(`振っています... ${originalDiceText} ${randomRoll}`);
+        const randomRoll = Math.floor(Math.random() * (maxTotal - minTotal + 1)) + minTotal;
+        rollingEmbed.setDescription(`振っています... ${originalDiceText} → ${randomRoll}`);
         await rollingMessage.edit({ embeds: [rollingEmbed] });
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 100)); // 100ms待機
     }
 
     const { resultMessage, embedColor } = await diceResultCallback();
@@ -179,17 +176,33 @@ export async function handleMessageRoll(message) {
 
     if (/^(\d*d\d+|dd\d+)$/.test(baseDice)) {
         try {
-            rolls = rollNormalDice(baseDice);
+            // ---- ここは baseDice の処理ブロック内 ----
+rolls = rollNormalDice(baseDice);
 
-            const diceResultCallback = async () => {
-                if (baseDice.startsWith('dd')) {
-                    return handleDdDice(baseDice, rolls, modifier);
-                } else {
-                    return handleNormalDice(baseDice, rolls, modifier);
-                }
-            };
+let minTotal = 1;
+let maxTotal = 100; // デフォルト
 
-            await showRollingEmbed(message, diceResultCallback, input);
+if (baseDice.startsWith('dd')) {
+    // ddダイスは常に1〜100
+    minTotal = 1;
+    maxTotal = 100;
+} else {
+    // 通常ダイス
+    const [count, max] = baseDice.split('d').map(Number);
+    minTotal = count * 1;
+    maxTotal = count * max;
+}
+
+const diceResultCallback = async () => {
+    if (baseDice.startsWith('dd')) {
+        return handleDdDice(baseDice, rolls, modifier);
+    } else {
+        return handleNormalDice(baseDice, rolls, modifier);
+    }
+};
+
+// 🔽 修正後: minTotal, maxTotal を追加で渡す
+await showRollingEmbed(message, diceResultCallback, input, minTotal, maxTotal);
 
         } catch (error) {
             console.error('❌ サイコロエラー:', error);
